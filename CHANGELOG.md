@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.2] - 2025-01-07
+
+### ✨ Added
+
+- **Logo** - Added Nano Banana logo to README (`assets/nano-banana-logo.png`)
+- **README Styling** - Centered header with logo and badges for better presentation
+
+---
+
 ## [1.0.1] - 2025-01-07
 
 ### 🔧 Fixed

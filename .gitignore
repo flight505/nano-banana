@@ -43,11 +43,13 @@ env/
 Thumbs.db
 
 # Generated images (keep in .gitignore for development)
+# But allow assets folder for logos/branding
 *.png
 *.jpg
 *.jpeg
 *.gif
 *.webp
+!assets/**/*
 !references/**/*.png
 
 # Review logs

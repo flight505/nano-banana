@@ -1,10 +1,19 @@
-# 🍌 Nano Banana
+<p align="center">
+  <img src="assets/nano-banana-logo.png" alt="Nano Banana Logo" width="400">
+</p>
 
-[![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)](https://github.com/flight505/nano-banana)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-purple.svg)](https://github.com/anthropics/claude-code)
+<p align="center">
+  <a href="https://github.com/flight505/nano-banana"><img src="https://img.shields.io/badge/version-1.0.2-blue.svg" alt="Version"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License"></a>
+  <a href="https://github.com/anthropics/claude-code"><img src="https://img.shields.io/badge/Claude%20Code-Plugin-purple.svg" alt="Claude Code Plugin"></a>
+</p>
 
-**AI-powered image and diagram generation for Claude Code** using Nano Banana Pro (Gemini 3 Pro Image) with intelligent quality review.
+<p align="center">
+  <strong>AI-powered image and diagram generation for Claude Code</strong><br>
+  Using Nano Banana Pro (Gemini 3 Pro Image) with intelligent quality review
+</p>
+
+---
 
 ## ✨ Features
 

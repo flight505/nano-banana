@@ -1,9 +1,8 @@
 # Nano Banana - Python Dependencies
-# Install with: pip install -r requirements.txt
-# Or with uv: uv pip install -r requirements.txt
-
-# Required - HTTP requests to OpenRouter API
-requests>=2.25.0
+#
+# ZERO REQUIRED DEPENDENCIES - Uses Python stdlib only!
+# The scripts use urllib.request instead of requests library,
+# eliminating PEP 668 issues on modern systems.
 
 # Optional - for .env file support (not required if using exported keys)
 # python-dotenv>=0.19.0

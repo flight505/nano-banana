@@ -6,11 +6,11 @@ description: Configure API keys and environment for Nano Banana
 
 I'll help you configure Nano Banana for image and diagram generation.
 
-## Requirements Check
+## Requirements
 
 Nano Banana requires:
 1. **OpenRouter API Key** - For accessing AI models (Gemini 3 Pro Image, FLUX, etc.)
-2. **Python 3.8+** - With `requests` library installed
+2. **Python 3.8+** - Uses stdlib only, **no external dependencies required!**
 
 ## Step 1: Check Current Configuration
 
@@ -44,7 +44,7 @@ If you don't have an OpenRouter API key:
 
 Choose ONE of these methods:
 
-### Option A: Environment Variable (Recommended for Development)
+### Option A: Environment Variable (Recommended)
 
 Add to your shell profile (`~/.zshrc` or `~/.bashrc`):
 
@@ -57,7 +57,7 @@ Then reload:
 source ~/.zshrc  # or source ~/.bashrc
 ```
 
-### Option B: Project .env File (Recommended for Projects)
+### Option B: Project .env File
 
 Create a `.env` file in your project root:
 
@@ -77,34 +77,9 @@ Pass the key directly:
 python generate_diagram.py "My diagram" -o diagram.png --api-key sk-or-v1-your-key-here
 ```
 
-## Step 4: Install Python Dependencies
+## Step 4: Verify Installation
 
-### With uv (Recommended)
-
-```bash
-# Install requests
-uv pip install requests
-
-# Optional: Install python-dotenv for .env file support
-uv pip install python-dotenv
-```
-
-### With pip
-
-```bash
-pip install requests python-dotenv
-```
-
-### From requirements.txt
-
-```bash
-# In the nano-banana directory
-pip install -r requirements.txt
-# Or with uv
-uv pip install -r requirements.txt
-```
-
-## Step 5: Verify Installation
+**No dependency installation required!** Nano Banana uses Python stdlib only.
 
 Test that everything works:
 
@@ -129,8 +104,19 @@ After setup, your configuration should look like:
 |-----------|--------|
 | OPENROUTER_API_KEY | ✅ Set (env or .env) |
 | Python 3.8+ | ✅ Installed |
-| requests library | ✅ Installed |
-| python-dotenv | ✅ Installed (optional) |
+| External dependencies | ✅ None required! |
+
+## Optional: .env File Support
+
+If you want to use `.env` files, install python-dotenv:
+
+```bash
+pip install python-dotenv
+# or
+uv pip install python-dotenv
+```
+
+This is **optional** - you can also just use exported environment variables.
 
 ## Troubleshooting
 
@@ -138,13 +124,6 @@ After setup, your configuration should look like:
 - Ensure the environment variable is set: `echo $OPENROUTER_API_KEY`
 - Or ensure `.env` file exists with the key
 - Restart your terminal after adding to shell profile
-
-### "requests library not found"
-```bash
-pip install requests
-# or
-uv pip install requests
-```
 
 ### "Permission denied" on scripts
 ```bash

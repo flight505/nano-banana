@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.3] - 2025-01-08
+
+### 🔄 Changed
+
+- **Zero Dependencies** - Rewrote HTTP layer to use Python stdlib (`urllib.request`) instead of `requests` library
+- **PEP 668 Compatible** - Works on all modern Python environments without dependency installation issues
+- **Simplified Setup** - No `pip install` step required - just configure API key and run!
+
+### 🗑️ Removed
+
+- Removed `requests` library dependency from `pyproject.toml` and `requirements.txt`
+- Removed dependency installation instructions from setup command
+
+### 📝 Documentation
+
+- Updated README with zero-dependency highlight
+- Simplified quick start guide (removed step 3: Install Dependencies)
+- Updated setup.md with streamlined configuration instructions
+
+---
+
 ## [1.0.2] - 2025-01-07
 
 ### ✨ Added

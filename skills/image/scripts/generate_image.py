@@ -25,6 +25,9 @@ import json
 import base64
 import argparse
 import os
+import urllib.request
+import urllib.error
+import socket
 from pathlib import Path
 from typing import Optional
 
@@ -93,6 +96,8 @@ def generate_image(
     """
     Generate or edit an image using OpenRouter API.
 
+    Uses Python stdlib only - no external dependencies required.
+
     Args:
         prompt: Text description of the image to generate, or editing instructions
         model: OpenRouter model ID (default: google/gemini-3-pro-image-preview)
@@ -103,14 +108,6 @@ def generate_image(
     Returns:
         dict: Response from OpenRouter API
     """
-    try:
-        import requests
-    except ImportError:
-        print("Error: 'requests' library not found.")
-        print("Install with: pip install requests")
-        print("Or with uv: uv pip install requests")
-        sys.exit(1)
-
     # Check for API key: param → env var → .env file
     if not api_key:
         api_key = os.getenv("OPENROUTER_API_KEY")
@@ -149,27 +146,44 @@ def generate_image(
     print(f"💾 Output: {output_path}")
     print(f"{'='*50}\n")
 
-    response = requests.post(
-        url="https://openrouter.ai/api/v1/chat/completions",
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-            "HTTP-Referer": "https://github.com/flight505/nano-banana",
-            "X-Title": "Nano Banana Image Generator"
-        },
-        json={
-            "model": model,
-            "messages": [{"role": "user", "content": message_content}],
-            "modalities": ["image", "text"]
-        },
-        timeout=120
-    )
+    # Prepare request using stdlib
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://github.com/flight505/nano-banana",
+        "X-Title": "Nano Banana Image Generator"
+    }
+    payload = {
+        "model": model,
+        "messages": [{"role": "user", "content": message_content}],
+        "modalities": ["image", "text"]
+    }
 
-    if response.status_code != 200:
-        print(f"❌ API Error ({response.status_code}): {response.text}")
+    data = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(url, data=data, headers=headers, method="POST")
+
+    try:
+        with urllib.request.urlopen(req, timeout=120) as response:
+            response_body = response.read().decode("utf-8")
+            result = json.loads(response_body)
+    except urllib.error.HTTPError as e:
+        error_body = ""
+        try:
+            error_body = e.read().decode("utf-8")
+        except Exception:
+            error_body = str(e)
+        print(f"❌ API Error ({e.code}): {error_body}")
         sys.exit(1)
-
-    result = response.json()
+    except urllib.error.URLError as e:
+        if isinstance(e.reason, socket.timeout):
+            print("❌ Request timed out after 120 seconds")
+        else:
+            print(f"❌ Connection error: {e.reason}")
+        sys.exit(1)
+    except socket.timeout:
+        print("❌ Request timed out after 120 seconds")
+        sys.exit(1)
 
     if result.get("choices"):
         message = result["choices"][0]["message"]

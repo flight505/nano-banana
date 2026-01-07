@@ -1,6 +1,6 @@
 [project]
 name = "nano-banana"
-version = "1.0.2"
+version = "1.0.3"
 description = "AI-powered image and diagram generation for Claude Code using Nano Banana Pro"
 readme = "README.md"
 license = { text = "MIT" }
@@ -36,7 +36,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "requests>=2.25.0",
+    # No required dependencies - uses Python stdlib only
 ]
 
 [project.optional-dependencies]

@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/flight505/nano-banana"><img src="https://img.shields.io/badge/version-1.0.2-blue.svg" alt="Version"></a>
+  <a href="https://github.com/flight505/nano-banana"><img src="https://img.shields.io/badge/version-1.0.3-blue.svg" alt="Version"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License"></a>
   <a href="https://github.com/anthropics/claude-code"><img src="https://img.shields.io/badge/Claude%20Code-Plugin-purple.svg" alt="Claude Code Plugin"></a>
 </p>
@@ -17,6 +17,7 @@
 
 ## ✨ Features
 
+- 🚫 **Zero Dependencies** - Uses Python stdlib only, works everywhere (no PEP 668 issues!)
 - 🎯 **Smart Iteration** - Only regenerates when quality is below threshold (saves API calls)
 - 📊 **Document-Type Aware** - 13 quality presets (journal, architecture, presentation, etc.)
 - 🔍 **AI Quality Review** - Gemini 3 Pro reviews each generation
@@ -46,17 +47,7 @@ export OPENROUTER_API_KEY='sk-or-v1-your-key-here'
 echo "OPENROUTER_API_KEY=sk-or-v1-your-key-here" > .env
 ```
 
-### 3. Install Dependencies
-
-```bash
-# With uv (recommended)
-uv pip install requests python-dotenv
-
-# Or with pip
-pip install requests python-dotenv
-```
-
-### 4. Generate!
+### 3. Generate!
 
 ```bash
 # Technical diagram with quality review

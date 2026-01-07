@@ -10,7 +10,7 @@ This script uses a smart iterative refinement approach:
 
 Requirements:
     - OPENROUTER_API_KEY environment variable
-    - requests library (pip install requests)
+    - Python 3.8+ (uses stdlib only, no external dependencies)
 
 Usage:
     python generate_diagram_ai.py "Create a flowchart showing user authentication flow" -o flowchart.png
@@ -22,18 +22,14 @@ import argparse
 import base64
 import json
 import os
+import re
 import sys
 import time
+import urllib.request
+import urllib.error
+import socket
 from pathlib import Path
 from typing import Optional, Dict, Any, List, Tuple
-
-try:
-    import requests
-except ImportError:
-    print("Error: requests library not found.")
-    print("Install with: pip install requests")
-    print("Or with uv: uv pip install requests")
-    sys.exit(1)
 
 
 def _load_env_file():
@@ -183,7 +179,7 @@ LAYOUT:
 
     def _make_request(self, model: str, messages: List[Dict[str, Any]],
                      modalities: Optional[List[str]] = None) -> Dict[str, Any]:
-        """Make a request to OpenRouter API."""
+        """Make a request to OpenRouter API using stdlib (zero external dependencies)."""
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
@@ -201,29 +197,37 @@ LAYOUT:
 
         self._log(f"Making request to {model}...")
 
+        url = f"{self.base_url}/chat/completions"
+        data = json.dumps(payload).encode("utf-8")
+
+        req = urllib.request.Request(url, data=data, headers=headers, method="POST")
+
         try:
-            response = requests.post(
-                f"{self.base_url}/chat/completions",
-                headers=headers,
-                json=payload,
-                timeout=120
-            )
+            with urllib.request.urlopen(req, timeout=120) as response:
+                response_body = response.read().decode("utf-8")
+                try:
+                    return json.loads(response_body)
+                except json.JSONDecodeError:
+                    return {"raw_text": response_body[:500]}
 
+        except urllib.error.HTTPError as e:
+            error_body = ""
             try:
-                response_json = response.json()
-            except json.JSONDecodeError:
-                response_json = {"raw_text": response.text[:500]}
+                error_body = e.read().decode("utf-8")
+                error_json = json.loads(error_body)
+                error_detail = error_json.get("error", error_json)
+            except (json.JSONDecodeError, Exception):
+                error_detail = error_body or str(e)
+            self._log(f"HTTP {e.code}: {error_detail}")
+            raise RuntimeError(f"API request failed (HTTP {e.code}): {error_detail}")
 
-            if response.status_code != 200:
-                error_detail = response_json.get("error", response_json)
-                self._log(f"HTTP {response.status_code}: {error_detail}")
-                raise RuntimeError(f"API request failed (HTTP {response.status_code}): {error_detail}")
+        except urllib.error.URLError as e:
+            if isinstance(e.reason, socket.timeout):
+                raise RuntimeError("API request timed out after 120 seconds")
+            raise RuntimeError(f"API request failed: {e.reason}")
 
-            return response_json
-        except requests.exceptions.Timeout:
+        except socket.timeout:
             raise RuntimeError("API request timed out after 120 seconds")
-        except requests.exceptions.RequestException as e:
-            raise RuntimeError(f"API request failed: {str(e)}")
 
     def _extract_image_from_response(self, response: Dict[str, Any]) -> Optional[bytes]:
         """Extract base64-encoded image from API response."""
@@ -258,7 +262,6 @@ LAYOUT:
             content = message.get("content", "")
 
             if isinstance(content, str) and "data:image" in content:
-                import re
                 match = re.search(r'data:image/[^;]+;base64,([A-Za-z0-9+/=\n\r]+)', content, re.DOTALL)
                 if match:
                     base64_str = match.group(1).replace('\n', '').replace('\r', '').replace(' ', '')
@@ -410,8 +413,6 @@ If score < {threshold}, mark as NEEDS_IMPROVEMENT with specific suggestions."""
 
             # Extract score
             score = 7.5
-            import re
-
             score_match = re.search(r'SCORE:\s*(\d+(?:\.\d+)?)', content, re.IGNORECASE)
             if score_match:
                 score = float(score_match.group(1))

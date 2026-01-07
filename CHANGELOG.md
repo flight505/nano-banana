@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.1] - 2025-01-07
+
+### 🔧 Fixed
+
+- **Plugin Schema** - Fixed marketplace.json with required `owner` and `plugins` fields
+- **Skills Format** - Changed plugin.json skills from objects to string paths
+- **uv Deprecation** - Use `dependency-groups.dev` instead of deprecated `tool.uv.dev-dependencies`
+- **Simplified Dependencies** - Focus on exported API keys (no .env dependency required)
+
+---
+
 ## [1.0.0] - 2025-01-07
 
 ### 🎉 Initial Release

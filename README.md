@@ -1,6 +1,6 @@
 # 🍌 Nano Banana
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/flight505/nano-banana)
+[![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)](https://github.com/flight505/nano-banana)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-purple.svg)](https://github.com/anthropics/claude-code)
 

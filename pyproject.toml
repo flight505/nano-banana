@@ -40,13 +40,15 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+dotenv = [
+    "python-dotenv>=0.19.0",
+]
+
+[dependency-groups]
 dev = [
     "python-dotenv>=0.19.0",
     "pytest>=7.0.0",
     "ruff>=0.1.0",
-]
-dotenv = [
-    "python-dotenv>=0.19.0",
 ]
 
 [project.urls]
@@ -54,10 +56,6 @@ Homepage = "https://github.com/flight505/nano-banana"
 Repository = "https://github.com/flight505/nano-banana"
 Documentation = "https://github.com/flight505/nano-banana#readme"
 Issues = "https://github.com/flight505/nano-banana/issues"
-
-[project.scripts]
-nano-banana-diagram = "skills.diagram.scripts.generate_diagram:main"
-nano-banana-image = "skills.image.scripts.generate_image:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -72,7 +70,7 @@ target-version = "py38"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W"]
-ignore = ["E501"]  # Line too long - handled by formatter
+ignore = ["E501"]
 
 [tool.ruff.format]
 quote-style = "double"

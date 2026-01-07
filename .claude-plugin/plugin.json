@@ -1,0 +1,33 @@
+{
+  "name": "nano-banana",
+  "version": "1.0.0",
+  "description": "AI-powered image and diagram generation for Claude Code using Nano Banana Pro",
+  "author": "flight505",
+  "license": "MIT",
+  "repository": "https://github.com/flight505/nano-banana",
+  "skills": [
+    {
+      "name": "diagram",
+      "path": "./skills/diagram",
+      "description": "Generate technical diagrams with AI-powered quality review"
+    },
+    {
+      "name": "image",
+      "path": "./skills/image",
+      "description": "Generate and edit images using AI models"
+    },
+    {
+      "name": "mermaid",
+      "path": "./skills/mermaid",
+      "description": "Create text-based diagrams with Mermaid syntax"
+    }
+  ],
+  "commands": [
+    {
+      "name": "setup",
+      "path": "./commands/setup.md",
+      "description": "Configure API keys for Nano Banana"
+    }
+  ],
+  "hooks": []
+}

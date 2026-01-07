@@ -1,0 +1,28 @@
+{
+  "name": "nano-banana",
+  "display_name": "Nano Banana - AI Image & Diagram Generation",
+  "version": "1.0.0",
+  "description": "Generate publication-quality diagrams and images using Nano Banana Pro (Gemini 3 Pro Image) with intelligent quality review. Features smart iteration that only regenerates when quality is below threshold, document-type aware quality standards, and support for both technical diagrams and general image generation.",
+  "author": "flight505",
+  "license": "MIT",
+  "repository": "https://github.com/flight505/nano-banana",
+  "homepage": "https://github.com/flight505/nano-banana",
+  "keywords": [
+    "image-generation",
+    "diagram",
+    "ai",
+    "nano-banana",
+    "gemini",
+    "openrouter",
+    "visualization",
+    "mermaid",
+    "flowchart",
+    "architecture"
+  ],
+  "categories": [
+    "visualization",
+    "productivity",
+    "development"
+  ],
+  "strict": true
+}

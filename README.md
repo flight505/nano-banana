@@ -1,8 +1,4 @@
 <p align="center">
-  <img src="assets/nano-banana-logo.png" alt="Nano Banana Logo" width="400">
-</p>
-
-<p align="center">
   <img src="assets/nano-banana-hero-voxel.png" alt="Nano Banana Hero - Epic Voxel Space Vista" width="800">
 </p>
 

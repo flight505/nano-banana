@@ -1,7 +1,7 @@
 {
   "name": "nano-banana",
   "description": "AI-powered image and diagram generation for Claude Code - uses Nano Banana Pro (Gemini 3 Pro Image) with intelligent quality review and smart iteration.",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "homepage": "https://github.com/flight505/nano-banana",
   "commands": "./commands",
   "skills": [

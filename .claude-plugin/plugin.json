@@ -18,21 +18,10 @@
     "mermaid",
     "technical-diagrams"
   ],
-  "category": "development",
   "commands": "./commands",
   "skills": [
     "./skills/diagram",
     "./skills/image",
     "./skills/mermaid"
-  ],
-  "requirements": {
-    "python": ">=3.8"
-  },
-  "optional_dependencies": {
-    "openrouter": {
-      "env_var": "OPENROUTER_API_KEY",
-      "purpose": "AI-powered image and diagram generation via OpenRouter API (Nano Banana Pro, Gemini 3 Pro Image)",
-      "required": true
-    }
-  }
+  ]
 }

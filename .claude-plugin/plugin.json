@@ -1,12 +1,38 @@
 {
   "name": "nano-banana",
+  "version": "1.0.6",
   "description": "AI-powered image and diagram generation for Claude Code - uses Nano Banana Pro (Gemini 3 Pro Image) with intelligent quality review and smart iteration.",
-  "version": "1.0.5",
+  "author": {
+    "name": "Jesper Vang",
+    "url": "https://github.com/flight505"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/flight505/nano-banana",
   "homepage": "https://github.com/flight505/nano-banana",
+  "keywords": [
+    "image-generation",
+    "diagrams",
+    "ai",
+    "visualization",
+    "openrouter",
+    "mermaid",
+    "technical-diagrams"
+  ],
+  "category": "development",
   "commands": "./commands",
   "skills": [
     "./skills/diagram",
     "./skills/image",
     "./skills/mermaid"
-  ]
+  ],
+  "requirements": {
+    "python": ">=3.8"
+  },
+  "optional_dependencies": {
+    "openrouter": {
+      "env_var": "OPENROUTER_API_KEY",
+      "purpose": "AI-powered image and diagram generation via OpenRouter API (Nano Banana Pro, Gemini 3 Pro Image)",
+      "required": true
+    }
+  }
 }

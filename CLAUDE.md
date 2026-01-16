@@ -2,6 +2,21 @@
 
 This is a Claude Code plugin for AI-powered image and diagram generation.
 
+## Version Management & Marketplace Sync
+
+**⚠️ CRITICAL: When committing version changes to `.claude-plugin/plugin.json`:**
+
+1. **Bump version** following semantic versioning (MAJOR.MINOR.PATCH)
+2. **Commit & push** to trigger webhook: `git commit -m "chore: bump version to X.Y.Z" && git push`
+3. **Verify webhook** fired (5 sec): `gh run list --repo flight505/nano-banana --limit 1`
+   - Success: "✅ Marketplace notification sent successfully (HTTP 204)"
+   - Failed: See `../../docs/WEBHOOK-TROUBLESHOOTING.md`
+4. **Marketplace auto-syncs** within 30 seconds - no manual `marketplace.json` update needed
+
+**Tip**: Use `../../scripts/bump-plugin-version.sh nano-banana X.Y.Z` to automate everything.
+
+---
+
 ## Quick Reference
 
 | Command | Description |

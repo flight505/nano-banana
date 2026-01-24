@@ -86,12 +86,40 @@ def save_base64_image(base64_data: str, output_path: str) -> None:
         f.write(image_data)
 
 
+def calculate_aspect_ratio(width: int, height: int) -> str:
+    """Calculate aspect ratio string from width and height."""
+    from math import gcd
+    divisor = gcd(width, height)
+    w_ratio = width // divisor
+    h_ratio = height // divisor
+
+    # Map to common aspect ratios for better model compatibility
+    common_ratios = {
+        (1, 1): "1:1",
+        (16, 9): "16:9",
+        (9, 16): "9:16",
+        (4, 3): "4:3",
+        (3, 4): "3:4",
+        (3, 2): "3:2",
+        (2, 3): "2:3",
+        (2, 1): "2:1",
+        (1, 2): "1:2",
+    }
+
+    if (w_ratio, h_ratio) in common_ratios:
+        return common_ratios[(w_ratio, h_ratio)]
+
+    return f"{w_ratio}:{h_ratio}"
+
+
 def generate_image(
     prompt: str,
     model: str = "google/gemini-3-pro-image-preview",
     output_path: str = "generated_image.png",
     api_key: Optional[str] = None,
-    input_image: Optional[str] = None
+    input_image: Optional[str] = None,
+    width: Optional[int] = None,
+    height: Optional[int] = None
 ) -> dict:
     """
     Generate or edit an image using OpenRouter API.
@@ -104,6 +132,8 @@ def generate_image(
         output_path: Path to save the generated image
         api_key: OpenRouter API key (will check .env and environment if not provided)
         input_image: Path to an input image for editing (optional)
+        width: Target image width in pixels (optional, Gemini models only)
+        height: Target image height in pixels (optional, Gemini models only)
 
     Returns:
         dict: Response from OpenRouter API
@@ -144,6 +174,17 @@ def generate_image(
 
     print(f"🤖 Model: {model}")
     print(f"💾 Output: {output_path}")
+
+    # Display dimension settings if specified
+    if width and height:
+        aspect_ratio = calculate_aspect_ratio(width, height)
+        print(f"📐 Dimensions: {width}x{height} (aspect ratio: {aspect_ratio})")
+
+        # Warn if using non-Gemini model with dimension controls
+        if "gemini" not in model.lower():
+            print(f"⚠️  Dimension control is optimized for Gemini models")
+            print(f"   Model '{model}' may ignore dimension settings")
+
     print(f"{'='*50}\n")
 
     # Prepare request using stdlib
@@ -159,6 +200,25 @@ def generate_image(
         "messages": [{"role": "user", "content": message_content}],
         "modalities": ["image", "text"]
     }
+
+    # Add dimension configuration if specified (Gemini models)
+    if width and height:
+        aspect_ratio = calculate_aspect_ratio(width, height)
+        image_config = {
+            "aspect_ratio": aspect_ratio
+        }
+
+        # Determine image size based on dimensions
+        # OpenRouter Gemini models use: "1K", "2K", "4K"
+        max_dim = max(width, height)
+        if max_dim <= 512:
+            image_config["image_size"] = "1K"  # ~1024px
+        elif max_dim <= 1024:
+            image_config["image_size"] = "2K"  # ~2048px
+        else:
+            image_config["image_size"] = "4K"  # ~4096px
+
+        payload["image_config"] = image_config
 
     data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(url, data=data, headers=headers, method="POST")
@@ -229,6 +289,12 @@ Examples:
   # Generate with default model (Gemini 3 Pro Image Preview)
   python generate_image.py "A beautiful sunset over mountains" -o sunset.png
 
+  # Generate with specific dimensions (256x256 square)
+  python generate_image.py "A simple icon" -o icon.png --width 256 --height 256
+
+  # Generate widescreen image (16:9 aspect ratio)
+  python generate_image.py "Panoramic landscape" -o panorama.png --width 1024 --height 576
+
   # Use a specific model
   python generate_image.py "A cat in space" -m "black-forest-labs/flux.2-pro" -o cat.png
 
@@ -239,9 +305,14 @@ Examples:
   python generate_image.py "Add a hat to the person" --input portrait.png -m "black-forest-labs/flux.2-pro"
 
 Popular image models:
-  - google/gemini-3-pro-image-preview (default, high quality, generation + editing)
+  - google/gemini-3-pro-image-preview (default, high quality, generation + editing, supports dimensions)
   - black-forest-labs/flux.2-pro (fast, high quality, generation + editing)
   - black-forest-labs/flux.2-flex (development version, generation only)
+
+Dimension Control:
+  --width and --height parameters work best with Gemini models.
+  The script calculates aspect ratio and maps dimensions to OpenRouter's image_config API.
+  Common aspect ratios: 1:1 (square), 16:9 (widescreen), 4:3 (standard), 3:2 (photo)
 
 Environment:
   OPENROUTER_API_KEY    OpenRouter API key (required)
@@ -258,15 +329,31 @@ Environment:
                        help="Input image path for editing (enables edit mode)")
     parser.add_argument("--api-key", type=str,
                        help="OpenRouter API key (will check environment if not provided)")
+    parser.add_argument("--width", type=int,
+                       help="Target image width in pixels (optional, works best with Gemini models)")
+    parser.add_argument("--height", type=int,
+                       help="Target image height in pixels (optional, works best with Gemini models)")
 
     args = parser.parse_args()
+
+    # Validate dimensions if provided
+    if (args.width and not args.height) or (args.height and not args.width):
+        parser.error("Both --width and --height must be specified together")
+
+    if args.width and args.width < 1:
+        parser.error("Width must be positive")
+
+    if args.height and args.height < 1:
+        parser.error("Height must be positive")
 
     generate_image(
         prompt=args.prompt,
         model=args.model,
         output_path=args.output,
         api_key=args.api_key,
-        input_image=args.input
+        input_image=args.input,
+        width=args.width,
+        height=args.height
     )
 
 

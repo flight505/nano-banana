@@ -1,6 +1,6 @@
 {
   "name": "nano-banana",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "AI-powered image and diagram generation for Claude Code - uses Nano Banana Pro (Gemini 3 Pro Image) with intelligent quality review and smart iteration.",
   "author": {
     "name": "Jesper Vang",

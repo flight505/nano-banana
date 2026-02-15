@@ -57,8 +57,9 @@ ERROR_PATTERNS: List[Tuple[str, str]] = [
         "Generation failed",
         "Image generation failed. Check the error output above for details.",
     ),
+    # Anchored with trailing space to avoid false positives on success messages
     (
-        "Error:",
+        "Error: ",
         "Image generation failed. Check the error output above for details.",
     ),
 ]
@@ -69,7 +70,7 @@ PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 def fail(message: str) -> None:
     """Exit with code 2 and a JSON systemMessage on stderr."""
     payload = json.dumps({"systemMessage": message})
-    sys.stderr.write(payload)
+    sys.stderr.write(payload + "\n")
     sys.exit(2)
 
 
@@ -167,7 +168,7 @@ def main() -> None:
         sys.exit(0)
 
     # Check tool_result for known error patterns
-    tool_result = data.get("tool_result", "")
+    tool_result = str(data.get("tool_result", ""))
     guidance = check_error_patterns(tool_result)
     if guidance is not None:
         fail(guidance)

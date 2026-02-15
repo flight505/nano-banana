@@ -189,7 +189,7 @@ result = generate_image(
 | **Quality Review** | No | Yes (Gemini 3 Pro) |
 | **Iteration** | Single pass | Smart iteration (1-2 passes) |
 | **Doc Types** | N/A | 13 document types with thresholds |
-| **Image Editing** | Yes | No |
+| **Image Editing** | Yes | Yes |
 | **Best For** | Creative visuals | Architecture, flowcharts, ERD |
 
 **Rule of thumb**: If it's a technical diagram with boxes, arrows, and labels → use `diagram`. If it's a photo, illustration, or artistic image → use `image`.

@@ -474,12 +474,12 @@ Generate an improved version that addresses all the critique points while mainta
             doc_type: Document type for quality threshold selection.
             input_image: Optional path to an existing diagram to edit.
         """
-        output_path = Path(output_path)
-        output_dir = output_path.parent
+        out = Path(output_path)
+        output_dir = out.parent
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        base_name = output_path.stem
-        extension = output_path.suffix or ".png"
+        base_name = out.stem
+        extension = out.suffix or ".png"
 
         threshold = self.QUALITY_THRESHOLDS.get(doc_type.lower(),
                                                  self.QUALITY_THRESHOLDS["default"])

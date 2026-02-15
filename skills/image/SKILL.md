@@ -2,6 +2,7 @@
 name: image
 description: "Generate and edit images using AI models via OpenRouter. Supports Nano Banana Pro (Gemini 3 Pro Image), FLUX, and other image generation models."
 allowed-tools: [Read, Write, Edit, Bash]
+disable-model-invocation: true
 ---
 
 # Nano Banana - Image Generation
@@ -41,6 +42,22 @@ python skills/image/scripts/generate_image.py "Make the sky more dramatic with s
 # Use a specific model
 python skills/image/scripts/generate_image.py "Abstract geometric art in blue and gold" -m "black-forest-labs/flux.2-pro" -o abstract.png
 ```
+
+### Editing Existing Images
+
+Use `/nano-banana:edit` to modify an existing image, or call the script directly:
+
+```bash
+# Edit via command (recommended)
+/nano-banana:edit sunset.png "Add dramatic storm clouds and lightning"
+
+# Edit via script directly
+python skills/image/scripts/generate_image.py "Add dramatic storm clouds" --input sunset.png -o sunset_edit1.png
+```
+
+**When to edit vs. regenerate:**
+- **Edit** when the base image is good but needs specific changes (add/remove elements, change colors, modify style)
+- **Regenerate** when the image fundamentally doesn't match what you need
 
 ## Available Models
 

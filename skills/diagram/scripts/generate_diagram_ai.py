@@ -303,11 +303,27 @@ LAYOUT:
         base64_data = base64.b64encode(image_data).decode("utf-8")
         return f"data:{mime_type};base64,{base64_data}"
 
-    def generate_image(self, prompt: str) -> Optional[bytes]:
-        """Generate an image using Nano Banana Pro."""
+    def generate_image(self, prompt: str, input_image: Optional[str] = None) -> Optional[bytes]:
+        """Generate an image using Nano Banana Pro.
+
+        Args:
+            prompt: The generation prompt describing the desired diagram.
+            input_image: Optional path to an existing image to edit.
+                         When provided, the image is sent alongside the prompt
+                         so the model can modify it rather than generating from scratch.
+        """
         self._last_error = None
 
-        messages = [{"role": "user", "content": prompt}]
+        if input_image:
+            image_data_url = self._image_to_base64(input_image)
+            message_content = [
+                {"type": "text", "text": prompt},
+                {"type": "image_url", "image_url": {"url": image_data_url}}
+            ]
+        else:
+            message_content = prompt
+
+        messages = [{"role": "user", "content": message_content}]
 
         try:
             response = self._make_request(
@@ -447,8 +463,17 @@ Generate an improved version that addresses all the critique points while mainta
 
     def generate_iterative(self, user_prompt: str, output_path: str,
                           iterations: int = 2,
-                          doc_type: str = "default") -> Dict[str, Any]:
-        """Generate diagram with smart iterative refinement."""
+                          doc_type: str = "default",
+                          input_image: Optional[str] = None) -> Dict[str, Any]:
+        """Generate diagram with smart iterative refinement.
+
+        Args:
+            user_prompt: Description of the diagram to generate or edit instructions.
+            output_path: File path for the output image.
+            iterations: Maximum number of refinement iterations.
+            doc_type: Document type for quality threshold selection.
+            input_image: Optional path to an existing diagram to edit.
+        """
         output_path = Path(output_path)
         output_dir = output_path.parent
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -471,16 +496,32 @@ Generate an improved version that addresses all the critique points while mainta
             "early_stop_reason": None
         }
 
-        current_prompt = f"""{self.DIAGRAM_GUIDELINES}
+        is_editing = input_image is not None
+
+        if is_editing:
+            current_prompt = f"""{self.DIAGRAM_GUIDELINES}
+
+EDITING MODE: Modify the provided diagram based on these instructions.
+Keep all existing elements unless the user explicitly asks to remove them.
+
+USER EDIT REQUEST: {user_prompt}
+
+Generate the updated diagram maintaining publication quality."""
+        else:
+            current_prompt = f"""{self.DIAGRAM_GUIDELINES}
 
 USER REQUEST: {user_prompt}
 
 Generate a publication-quality technical diagram that meets all the guidelines above."""
 
         print(f"\n{'='*60}")
-        print(f"🍌 Nano Banana - Generating Diagram")
+        print(f"🍌 Nano Banana - {'Editing' if is_editing else 'Generating'} Diagram")
         print(f"{'='*60}")
-        print(f"Description: {user_prompt}")
+        if is_editing:
+            print(f"Source: {input_image}")
+            print(f"Edit: {user_prompt}")
+        else:
+            print(f"Description: {user_prompt}")
         print(f"Document Type: {doc_type}")
         print(f"Quality Threshold: {threshold}/10")
         print(f"Max Iterations: {iterations}")
@@ -491,8 +532,8 @@ Generate a publication-quality technical diagram that meets all the guidelines a
             print(f"\n[Iteration {i}/{iterations}]")
             print("-" * 40)
 
-            print(f"Generating diagram...")
-            image_data = self.generate_image(current_prompt)
+            print(f"{'Editing' if is_editing and i == 1 else 'Generating'} diagram...")
+            image_data = self.generate_image(current_prompt, input_image=input_image if i == 1 else None)
 
             if not image_data:
                 error_msg = getattr(self, '_last_error', 'Image generation failed')
@@ -619,6 +660,8 @@ Environment:
     parser.add_argument("--doc-type", default="default",
                        choices=list(NanoBananaGenerator.QUALITY_THRESHOLDS.keys()),
                        help="Document type for quality threshold (default: default)")
+    parser.add_argument("--input", "-i", type=str,
+                       help="Input diagram image to edit (enables edit mode)")
     parser.add_argument("--api-key", help="OpenRouter API key (or set OPENROUTER_API_KEY)")
     parser.add_argument("-v", "--verbose", action="store_true",
                        help="Verbose output")
@@ -637,13 +680,18 @@ Environment:
         print("Error: Iterations must be between 1 and 2")
         sys.exit(1)
 
+    if args.input and not os.path.exists(args.input):
+        print(f"Error: Input image not found: {args.input}")
+        sys.exit(1)
+
     try:
         generator = NanoBananaGenerator(api_key=api_key, verbose=args.verbose)
         results = generator.generate_iterative(
             user_prompt=args.prompt,
             output_path=args.output,
             iterations=args.iterations,
-            doc_type=args.doc_type
+            doc_type=args.doc_type,
+            input_image=args.input
         )
 
         if results["success"]:

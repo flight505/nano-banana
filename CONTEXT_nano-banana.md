@@ -3,7 +3,7 @@
 ## Ground Truth Documentation
 
 **Plugin:** Nano Banana
-**Version:** 1.0.5
+**Version:** 1.1.0
 **Purpose:** AI-powered image and diagram generation for Claude Code
 **Repository:** https://github.com/flight505/nano-banana
 **Author:** flight505 (Jesper Vang)
@@ -19,6 +19,7 @@ Nano Banana is built on three foundational principles:
 1. **Zero Dependencies** - Uses Python stdlib only (`urllib.request` instead of `requests`)
 2. **Smart Iteration** - Only regenerates when quality is below threshold (cost optimization)
 3. **Document-Type Awareness** - Different quality standards for different use cases
+4. **Explicit Control** - Skills require explicit user invocation (`disable-model-invocation: true`)
 
 ### Three-Skill System
 
@@ -70,15 +71,15 @@ class OpenRouterClient:
 **Algorithm:**
 1. Generate diagram using Nano Banana Pro (Gemini 3 Pro Image)
 2. AI Quality Review evaluates 5 criteria (Gemini 3 Pro Vision)
-3. If score < threshold: regenerate (max 3 iterations)
+3. If score < threshold: regenerate (max 2 iterations)
 4. If score ≥ threshold: stop early (saves API calls)
 
-**Quality Criteria:**
-- Technical Accuracy (0-10)
-- Clarity and Readability (0-10)
-- Label Quality (0-10)
-- Layout and Composition (0-10)
-- Professional Appearance (0-10)
+**Quality Criteria (5 criteria, 0-2 points each, total 10):**
+- Technical Accuracy (0-2)
+- Clarity and Readability (0-2)
+- Label Quality (0-2)
+- Layout and Composition (0-2)
+- Professional Appearance (0-2)
 
 **Cost Optimization:**
 - Early stopping prevents unnecessary regenerations
@@ -110,6 +111,44 @@ class OpenRouterClient:
 - Higher thresholds for external/published documents
 - Lower thresholds for internal/iterative work
 - Presentation mode optimized for speed (not perfection)
+
+---
+
+## Hook System (v1.1.0)
+
+### PostToolUse Output Validation
+
+**Location:** `hooks/validate-output.py`
+**Config:** `hooks/hooks.json`
+**Event:** PostToolUse on Bash (5-second timeout)
+
+**Activation:** Only fires for Bash commands containing `generate_image.py` or `generate_diagram`. All other commands pass through silently (exit 0).
+
+**Two-phase validation:**
+
+1. **Error pattern matching** — Checks `tool_result` for known error strings and provides targeted recovery guidance via `{"systemMessage": "..."}` on stderr (exit 2):
+   - API key missing → "Run /nano-banana:setup"
+   - HTTP 401/403 → "Check key at openrouter.ai/keys"
+   - HTTP 429 → "Rate limited, wait and retry"
+   - Timeout → "Try simpler prompt"
+   - Missing source image → "Verify file path"
+
+2. **Output file validation** — Parses `-o`/`--output` from the command, resolves against `cwd`, checks:
+   - File exists
+   - File size > 0
+   - Valid PNG header (first 8 bytes = `\x89PNG\r\n\x1a\n`) for `.png` files
+
+### Edit Workflow
+
+**Command:** `/nano-banana:edit <source-image> <edit-instructions>`
+
+**How it works:**
+1. Parses source path and edit instructions from `$ARGUMENTS`
+2. Auto-detects diagram vs. image (checks filename patterns, review log presence)
+3. Routes to appropriate script with `--input` flag
+4. Saves output with incremental naming (`_edit1`, `_edit2`, etc.)
+
+**Diagram editing uses multimodal input:** The first iteration sends both the text prompt and the source image to Gemini 3 Pro Image. Subsequent iterations (if quality review triggers) refine based on critique alone.
 
 ---
 
@@ -145,20 +184,20 @@ class OpenRouterClient:
 ### Request Flow
 
 ```
-User Description
+User Description (or --input existing diagram + edit instructions)
     ↓
-generate_diagram.py
+generate_diagram.py → generate_diagram_ai.py
     ↓
 OpenRouterClient (stdlib HTTP)
     ↓
-Gemini 3 Pro Image (generate diagram)
+Gemini 3 Pro Image (generate or edit diagram)
     ↓
 Base64 image response
     ↓
 Gemini 3 Pro (quality review)
     ↓
 Score >= threshold? → Save and exit
-Score < threshold? → Regenerate (max 3 iterations)
+Score < threshold? → Regenerate (max 2 iterations)
 ```
 
 ---
@@ -170,14 +209,18 @@ Score < threshold? → Regenerate (max 3 iterations)
 ```
 nano-banana/
 ├── .claude-plugin/
-│   └── plugin.json              # Plugin manifest (v1.0.5)
+│   └── plugin.json              # Plugin manifest (v1.1.0)
 ├── .github/
 │   └── workflows/
 │       └── notify-marketplace.yml  # Webhook to marketplace
 ├── assets/
 │   └── nano-banana-hero-voxel.png  # Hero image
 ├── commands/
+│   ├── edit.md                  # /nano-banana:edit command (v1.1.0)
 │   └── setup.md                 # /nano-banana:setup command
+├── hooks/
+│   ├── hooks.json               # PostToolUse hook declarations (v1.1.0)
+│   └── validate-output.py       # Output validation + error recovery (v1.1.0)
 ├── skills/
 │   ├── common/
 │   │   ├── __init__.py
@@ -224,12 +267,41 @@ nano-banana/
 
 ## Version History and Major Changes
 
-### v1.0.5 (2026-01-13) - Current
-- Latest stable release in marketplace
+### v1.1.0 (2026-02-16) - Current
 
-### v1.0.4 (2025-01-10)
+**New Features:**
+- `/nano-banana:edit` command for iterative editing of existing images and diagrams
+- `--input` flag on both `generate_diagram.py` and `generate_diagram_ai.py` for diagram editing
+- PostToolUse validation hook (`hooks/validate-output.py`) — validates generated files and provides error recovery guidance
+- `disable-model-invocation: true` on image and diagram skills to prevent unintended generation
+
+**Files Added:**
+- `commands/edit.md` — Explicit edit command with `$ARGUMENTS`
+- `hooks/hooks.json` — Hook event declarations (PostToolUse on Bash)
+- `hooks/validate-output.py` — Output validation (file exists, non-zero, valid PNG header) + error pattern matching with recovery guidance
+
+**Files Modified:**
+- `skills/diagram/scripts/generate_diagram_ai.py` — `generate_image()` and `generate_iterative()` accept `input_image` parameter for multimodal editing
+- `skills/diagram/scripts/generate_diagram.py` — Wrapper passes `--input` through to AI script
+- `skills/image/SKILL.md` — Added `disable-model-invocation`, edit guidance, updated comparison table
+- `skills/diagram/SKILL.md` — Added `disable-model-invocation`, edit guidance
+- `.claude-plugin/plugin.json` — Added `hooks` field, `image-editing` keyword, version bump
+
+### v1.0.8 (2026-01-24)
+- Added width/height parameters with OpenRouter image_config support
+- Dimension control via aspect ratio calculation
+
+### v1.0.7 (2026-01-16)
+- Updated plugin.json to match official Claude Code schema
+- Version badge updates
+
+### v1.0.5-1.0.6 (2026-01-13 to 2026-01-16)
+- Webhook system testing and fixes
+- Ground truth documentation (CONTEXT_nano-banana.md)
+
+### v1.0.4 (2026-01-10)
 - Documentation improvements
-- Badge updates
+- Hero image and badge updates
 
 ### v1.0.3 (2025-01-08) - **Critical Architectural Change**
 
@@ -365,7 +437,7 @@ git push origin main
 |----------|-----------|------|
 | Simple diagram (meets threshold first try) | 1 | $0.05-0.10 |
 | Medium complexity (2 iterations) | 2 | $0.10-0.20 |
-| Complex/high threshold (3 iterations) | 3 | $0.15-0.30 |
+| Complex/high threshold (2 iterations) | 2 | $0.10-0.20 |
 
 **Cost Breakdown:**
 - Diagram generation: ~$0.03-0.08 per image
@@ -373,8 +445,8 @@ git push origin main
 - Total per iteration: ~$0.05-0.10
 
 **Smart Iteration Savings:**
-- Without smart iteration (fixed 3 iterations): $0.15-0.30
-- With smart iteration (early stopping): $0.05-0.20
+- Without smart iteration (fixed 2 iterations): $0.10-0.20
+- With smart iteration (early stopping): $0.05-0.10
 - Average savings: 30-50%
 
 **Image Generation:**
@@ -453,14 +525,14 @@ Users see new version (~30 seconds)
 {
   "name": "nano-banana",
   "description": "AI-powered image and diagram generation using Nano Banana Pro with smart quality review",
-  "version": "1.0.5",
+  "version": "1.1.0",
   "author": {
     "name": "Jesper Vang",
     "url": "https://github.com/flight505"
   },
   "source": "./nano-banana",
   "category": "productivity",
-  "keywords": ["image-generation", "diagram", "ai", "visualization"]
+  "keywords": ["image-generation", "diagram", "ai", "visualization", "image-editing"]
 }
 ```
 
@@ -554,10 +626,6 @@ Users see new version (~30 seconds)
    - CLI doesn't show progress during generation
    - Can feel unresponsive for 30-60 second generations
 
-3. **No Diagram History**
-   - No built-in way to track previous generations
-   - Users must manage output files manually
-
 ---
 
 ## References and External Dependencies
@@ -588,9 +656,13 @@ Users see new version (~30 seconds)
 
 - `.claude-plugin/plugin.json` - Plugin manifest
 - `skills/common/http_client.py` - Core HTTP client
-- `skills/diagram/scripts/generate_diagram.py` - Main CLI
-- `skills/diagram/scripts/generate_diagram_ai.py` - AI logic
-- `skills/image/scripts/generate_image.py` - Image CLI
+- `skills/diagram/scripts/generate_diagram.py` - Main CLI (wrapper)
+- `skills/diagram/scripts/generate_diagram_ai.py` - AI generation logic
+- `skills/image/scripts/generate_image.py` - Image generation/editing CLI
+- `hooks/hooks.json` - Hook event declarations
+- `hooks/validate-output.py` - PostToolUse output validation
+- `commands/edit.md` - Edit command definition
+- `commands/setup.md` - Setup command definition
 - `CLAUDE.md` - Developer instructions
 - `README.md` - Public documentation
 - `CONTEXT_nano-banana.md` - This file (ground truth)
@@ -617,10 +689,12 @@ Users see new version (~30 seconds)
 
 **Three skills** provide complementary capabilities: technical diagrams with quality review (`diagram`), general image generation/editing (`image`), and version-controlled text diagrams (`mermaid`). The plugin integrates with OpenRouter for unified API access to multiple AI models, primarily Gemini 3 Pro Image.
 
-**Key architectural decisions** include zero external dependencies, threshold-based iteration vs. fixed iteration counts, and document-type-aware quality standards. The plugin is maintained in the flight505-marketplace ecosystem with webhook-based auto-updates.
+**v1.1.0** added iterative editing support via `/nano-banana:edit`, PostToolUse validation hooks for error recovery guidance, and skill hardening with `disable-model-invocation: true` to prevent unintended costly generation. Both diagram and image skills now support `--input` for editing existing files.
+
+**Key architectural decisions** include zero external dependencies, threshold-based iteration vs. fixed iteration counts, document-type-aware quality standards, and explicit user control over generation invocation. The plugin is maintained in the flight505-marketplace ecosystem with webhook-based auto-updates.
 
 ---
 
-**Document Version:** 1.0.0
-**Last Updated:** 2026-01-13
+**Document Version:** 2.0.0
+**Last Updated:** 2026-02-16
 **Maintained By:** flight505 (Jesper Vang)

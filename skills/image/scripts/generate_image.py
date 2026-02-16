@@ -25,6 +25,7 @@ import json
 import base64
 import argparse
 import os
+import time
 import urllib.request
 import urllib.error
 import socket
@@ -119,7 +120,8 @@ def generate_image(
     api_key: Optional[str] = None,
     input_image: Optional[str] = None,
     width: Optional[int] = None,
-    height: Optional[int] = None
+    height: Optional[int] = None,
+    timeout: int = 120
 ) -> dict:
     """
     Generate or edit an image using OpenRouter API.
@@ -134,6 +136,7 @@ def generate_image(
         input_image: Path to an input image for editing (optional)
         width: Target image width in pixels (optional, Gemini models only)
         height: Target image height in pixels (optional, Gemini models only)
+        timeout: Request timeout in seconds (default: 120)
 
     Returns:
         dict: Response from OpenRouter API
@@ -185,6 +188,7 @@ def generate_image(
             print(f"⚠️  Dimension control is optimized for Gemini models")
             print(f"   Model '{model}' may ignore dimension settings")
 
+    print(f"⏱️  Timeout: {timeout}s")
     print(f"{'='*50}\n")
 
     # Prepare request using stdlib
@@ -223,27 +227,31 @@ def generate_image(
     data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(url, data=data, headers=headers, method="POST")
 
+    t_start = time.time()
     try:
-        with urllib.request.urlopen(req, timeout=120) as response:
+        with urllib.request.urlopen(req, timeout=timeout) as response:
             response_body = response.read().decode("utf-8")
             result = json.loads(response_body)
     except urllib.error.HTTPError as e:
+        elapsed = time.time() - t_start
         error_body = ""
         try:
             error_body = e.read().decode("utf-8")
         except Exception:
             error_body = str(e)
-        print(f"❌ API Error ({e.code}): {error_body}")
+        print(f"❌ API Error ({e.code}): {error_body} (after {elapsed:.1f}s)")
         sys.exit(1)
     except urllib.error.URLError as e:
+        elapsed = time.time() - t_start
         if isinstance(e.reason, socket.timeout):
-            print("❌ Request timed out after 120 seconds")
+            print(f"❌ Request timed out after {timeout}s (use --timeout to increase)")
         else:
-            print(f"❌ Connection error: {e.reason}")
+            print(f"❌ Connection error: {e.reason} (after {elapsed:.1f}s)")
         sys.exit(1)
     except socket.timeout:
-        print("❌ Request timed out after 120 seconds")
+        print(f"❌ Request timed out after {timeout}s (use --timeout to increase)")
         sys.exit(1)
+    elapsed = time.time() - t_start
 
     if result.get("choices"):
         message = result["choices"][0]["message"]
@@ -263,18 +271,18 @@ def generate_image(
             if "image_url" in image:
                 image_url = image["image_url"]["url"]
                 save_base64_image(image_url, output_path)
-                print(f"✅ Image saved to: {output_path}")
+                print(f"✅ Image saved to: {output_path} (elapsed: {elapsed:.1f}s)")
             elif "url" in image:
                 save_base64_image(image["url"], output_path)
-                print(f"✅ Image saved to: {output_path}")
+                print(f"✅ Image saved to: {output_path} (elapsed: {elapsed:.1f}s)")
             else:
                 print(f"⚠️ Unexpected image format: {image}")
         else:
-            print("⚠️ No image found in response")
+            print(f"⚠️ No image found in response (elapsed: {elapsed:.1f}s)")
             if message.get("content"):
                 print(f"Response content: {message['content'][:500]}...")
     else:
-        print("❌ No choices in response")
+        print(f"❌ No choices in response (elapsed: {elapsed:.1f}s)")
         print(f"Response: {json.dumps(result, indent=2)}")
 
     return result
@@ -333,6 +341,8 @@ Environment:
                        help="Target image width in pixels (optional, works best with Gemini models)")
     parser.add_argument("--height", type=int,
                        help="Target image height in pixels (optional, works best with Gemini models)")
+    parser.add_argument("--timeout", type=int, default=120,
+                       help="Request timeout in seconds (default: 120)")
 
     args = parser.parse_args()
 
@@ -353,7 +363,8 @@ Environment:
         api_key=args.api_key,
         input_image=args.input,
         width=args.width,
-        height=args.height
+        height=args.height,
+        timeout=args.timeout
     )
 
 

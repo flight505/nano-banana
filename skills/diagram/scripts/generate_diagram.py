@@ -86,6 +86,8 @@ Environment Variables:
                        help="OpenRouter API key (or use OPENROUTER_API_KEY env var)")
     parser.add_argument("--input", "-i", type=str,
                        help="Input diagram image to edit (enables edit mode)")
+    parser.add_argument("--timeout", type=int, default=120,
+                       help="Request timeout in seconds (default: 120)")
     parser.add_argument("-v", "--verbose", action="store_true",
                        help="Verbose output")
 
@@ -129,6 +131,9 @@ Environment Variables:
             print(f"Error: Input image not found: {args.input}")
             sys.exit(1)
         cmd.extend(["--input", args.input])
+
+    if args.timeout != 120:
+        cmd.extend(["--timeout", str(args.timeout)])
 
     if args.verbose:
         cmd.append("-v")

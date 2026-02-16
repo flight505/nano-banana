@@ -141,13 +141,14 @@ LAYOUT:
 - No clutter or unnecessary decorative elements
 """
 
-    def __init__(self, api_key: Optional[str] = None, verbose: bool = False):
+    def __init__(self, api_key: Optional[str] = None, verbose: bool = False, timeout: int = 120):
         """
         Initialize the generator.
 
         Args:
             api_key: OpenRouter API key (or use OPENROUTER_API_KEY env var)
             verbose: Print detailed progress information
+            timeout: Request timeout in seconds (default: 120)
         """
         self.api_key = api_key or os.getenv("OPENROUTER_API_KEY")
 
@@ -165,12 +166,13 @@ LAYOUT:
             )
 
         self.verbose = verbose
+        self.timeout = timeout
         self._last_error = None
         self.base_url = "https://openrouter.ai/api/v1"
         # Nano Banana Pro - Google's Gemini 3 Pro image generation
         self.image_model = "google/gemini-3-pro-image-preview"
         # Gemini 3 Pro for quality review
-        self.review_model = "google/gemini-3-pro"
+        self.review_model = "google/gemini-3-pro-preview"
 
     def _log(self, message: str):
         """Log message if verbose mode is enabled."""
@@ -203,7 +205,7 @@ LAYOUT:
         req = urllib.request.Request(url, data=data, headers=headers, method="POST")
 
         try:
-            with urllib.request.urlopen(req, timeout=120) as response:
+            with urllib.request.urlopen(req, timeout=self.timeout) as response:
                 response_body = response.read().decode("utf-8")
                 try:
                     return json.loads(response_body)
@@ -223,11 +225,11 @@ LAYOUT:
 
         except urllib.error.URLError as e:
             if isinstance(e.reason, socket.timeout):
-                raise RuntimeError("API request timed out after 120 seconds")
+                raise RuntimeError(f"API request timed out after {self.timeout}s (use --timeout to increase)")
             raise RuntimeError(f"API request failed: {e.reason}")
 
         except socket.timeout:
-            raise RuntimeError("API request timed out after 120 seconds")
+            raise RuntimeError(f"API request timed out after {self.timeout}s (use --timeout to increase)")
 
     def _extract_image_from_response(self, response: Dict[str, Any]) -> Optional[bytes]:
         """Extract base64-encoded image from API response."""
@@ -525,19 +527,25 @@ Generate a publication-quality technical diagram that meets all the guidelines a
         print(f"Document Type: {doc_type}")
         print(f"Quality Threshold: {threshold}/10")
         print(f"Max Iterations: {iterations}")
+        print(f"Timeout: {self.timeout}s")
         print(f"Output: {output_path}")
         print(f"{'='*60}\n")
+
+        total_start = time.time()
 
         for i in range(1, iterations + 1):
             print(f"\n[Iteration {i}/{iterations}]")
             print("-" * 40)
 
-            print(f"{'Editing' if is_editing and i == 1 else 'Generating'} diagram...")
+            action = 'Editing' if is_editing and i == 1 else 'Generating'
+            print(f"{action} diagram...")
+            t_gen = time.time()
             image_data = self.generate_image(current_prompt, input_image=input_image if i == 1 else None)
+            gen_elapsed = time.time() - t_gen
 
             if not image_data:
                 error_msg = getattr(self, '_last_error', 'Image generation failed')
-                print(f"✗ Generation failed: {error_msg}")
+                print(f"✗ Generation failed: {error_msg} (after {gen_elapsed:.1f}s)")
                 results["iterations"].append({
                     "iteration": i,
                     "success": False,
@@ -548,13 +556,15 @@ Generate a publication-quality technical diagram that meets all the guidelines a
             iter_path = output_dir / f"{base_name}_v{i}{extension}"
             with open(iter_path, "wb") as f:
                 f.write(image_data)
-            print(f"✓ Saved: {iter_path}")
+            print(f"✓ Saved: {iter_path} (elapsed: {gen_elapsed:.1f}s)")
 
             print(f"Reviewing with Gemini 3 Pro...")
+            t_review = time.time()
             critique, score, needs_improvement = self.review_image(
                 str(iter_path), user_prompt, i, doc_type, iterations
             )
-            print(f"✓ Score: {score}/10 (threshold: {threshold}/10)")
+            review_elapsed = time.time() - t_review
+            print(f"✓ Score: {score}/10 (threshold: {threshold}/10) (review: {review_elapsed:.1f}s)")
 
             iteration_result = {
                 "iteration": i,
@@ -602,11 +612,14 @@ Generate a publication-quality technical diagram that meets all the guidelines a
             json.dump(results, f, indent=2)
         print(f"✓ Review log: {log_path}")
 
+        total_elapsed = time.time() - total_start
+
         print(f"\n{'='*60}")
         print(f"🍌 Generation Complete!")
         print(f"Final Score: {results['final_score']}/10")
         if results["early_stop"]:
             print(f"Iterations Used: {len([r for r in results['iterations'] if r.get('success')])}/{iterations} (early stop)")
+        print(f"Total Time: {total_elapsed:.1f}s")
         print(f"{'='*60}\n")
 
         return results
@@ -663,6 +676,8 @@ Environment:
     parser.add_argument("--input", "-i", type=str,
                        help="Input diagram image to edit (enables edit mode)")
     parser.add_argument("--api-key", help="OpenRouter API key (or set OPENROUTER_API_KEY)")
+    parser.add_argument("--timeout", type=int, default=120,
+                       help="Request timeout in seconds (default: 120)")
     parser.add_argument("-v", "--verbose", action="store_true",
                        help="Verbose output")
 
@@ -685,7 +700,7 @@ Environment:
         sys.exit(1)
 
     try:
-        generator = NanoBananaGenerator(api_key=api_key, verbose=args.verbose)
+        generator = NanoBananaGenerator(api_key=api_key, verbose=args.verbose, timeout=args.timeout)
         results = generator.generate_iterative(
             user_prompt=args.prompt,
             output_path=args.output,

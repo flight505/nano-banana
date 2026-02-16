@@ -167,7 +167,7 @@ class OpenRouterClient:
    - Cost: ~$0.05-0.15 per diagram
 
 2. **Gemini 3 Pro** (Vision/Text)
-   - Model ID: `google/gemini-3-pro`
+   - Model ID: `google/gemini-3-pro-preview`
    - Purpose: Quality review and critique
    - Cost: ~$0.01-0.05 per review
 
@@ -578,7 +578,7 @@ Users see new version (~30 seconds)
 **Diagram Skill:**
 - Output: PNG images (base64 decoded)
 - Resolution: Determined by model (typically 1024x1024 to 2048x2048)
-- No vector output (SVG) support
+- No vector output (SVG) — tested and rejected (see Future Development)
 
 **Image Skill:**
 - Output: PNG images
@@ -604,9 +604,13 @@ Users see new version (~30 seconds)
    - Generate multiple diagrams in parallel
    - Useful for documentation sets
 
-3. **Vector Output**
-   - Add SVG export option
-   - Scalable diagrams for presentations
+3. **Vector Output (SVG)** — ❌ TESTED, NOT VIABLE
+   - Tested in Feb 2026 using Gemini 3 Pro (text model) to generate SVG code
+   - Approach: prompt → text model (no image modality) → extract `<svg>` from response → save as `.svg`
+   - **Results:** SVG output quality was significantly worse than PNG raster for both diagrams and icons
+   - The text model produces structurally valid SVG but visually poor output — crude shapes, bad proportions, missing detail compared to the image model's raster output
+   - Self-review scored SVG 10/10 (reviewing its own code) while the visual result was clearly inferior
+   - **Conclusion:** Current text models cannot match image generation models for visual quality. SVG generation should only be revisited when image models can natively output vector formats.
 
 4. **Local Model Support**
    - Optional local model fallback
@@ -618,13 +622,17 @@ Users see new version (~30 seconds)
 
 ### Known Issues
 
-1. **Timeout on Complex Diagrams**
-   - Very complex diagrams may timeout (>120s)
-   - Workaround: Increase timeout or simplify description
+1. **~~Timeout on Complex Diagrams~~** ✅ RESOLVED (v1.2.0)
+   - `--timeout` CLI flag added to all generation scripts (default: 120s)
+   - Applies per API request, not total process time
+   - Diagram generation with 2 iterations can make up to 4 API calls (2 generation + 2 review)
+   - Example: `--timeout 300` gives each API call 5 minutes to respond
 
-2. **No Progress Indication**
-   - CLI doesn't show progress during generation
-   - Can feel unresponsive for 30-60 second generations
+2. **~~No Progress Indication~~** ✅ RESOLVED (v1.2.0)
+   - Elapsed time logging added to all generation stages
+   - Per-stage timing: generation, review, and total time displayed
+   - Note: Spinners/progress bars are NOT viable inside Claude Code (Bash tool captures output, not streamed in real-time; ANSI escape codes produce garbage). Claude Code shows its own spinner during command execution.
+   - Example output: `✓ Saved: diagram_v1.png (elapsed: 42.3s)`
 
 ---
 

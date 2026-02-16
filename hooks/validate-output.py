@@ -39,7 +39,7 @@ ERROR_PATTERNS: List[Tuple[str, str]] = [
     ),
     (
         "timed out",
-        "Request timed out after 120 seconds. Try a simpler prompt or retry.",
+        "Request timed out. Try a simpler prompt, retry, or use --timeout to increase the limit.",
     ),
     (
         "Image file not found",

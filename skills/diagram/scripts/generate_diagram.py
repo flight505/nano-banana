@@ -84,6 +84,8 @@ Environment Variables:
                        help="Maximum refinement iterations (default: 2, max: 2)")
     parser.add_argument("--api-key",
                        help="OpenRouter API key (or use OPENROUTER_API_KEY env var)")
+    parser.add_argument("--input", "-i", type=str,
+                       help="Input diagram image to edit (enables edit mode)")
     parser.add_argument("-v", "--verbose", action="store_true",
                        help="Verbose output")
 
@@ -121,6 +123,12 @@ Environment Variables:
 
     if api_key:
         cmd.extend(["--api-key", api_key])
+
+    if args.input:
+        if not os.path.exists(args.input):
+            print(f"Error: Input image not found: {args.input}")
+            sys.exit(1)
+        cmd.extend(["--input", args.input])
 
     if args.verbose:
         cmd.append("-v")

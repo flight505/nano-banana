@@ -2,6 +2,7 @@
 name: diagram
 description: "Generate publication-quality technical diagrams using Nano Banana Pro (Gemini 3 Pro Image) with AI-powered quality review. Smart iteration only regenerates when quality is below threshold."
 allowed-tools: [Read, Write, Edit, Bash]
+disable-model-invocation: true
 ---
 
 # Nano Banana - Diagram Generation
@@ -40,6 +41,22 @@ python skills/diagram/scripts/generate_diagram.py "User authentication flow with
 # Generate with verbose output
 python skills/diagram/scripts/generate_diagram.py "Database schema for e-commerce" -o schema.png -v
 ```
+
+### Editing Existing Diagrams
+
+Use `/nano-banana:edit` to modify an existing diagram, or call the script directly:
+
+```bash
+# Edit via command (recommended)
+/nano-banana:edit architecture.png "Add a Redis cache layer between the API and database"
+
+# Edit via script directly
+python skills/diagram/scripts/generate_diagram_ai.py "Add Redis cache layer" --input architecture.png -o architecture_edit1.png --doc-type architecture
+```
+
+**When to edit vs. regenerate:**
+- **Edit** when the diagram structure is correct but needs additions or modifications
+- **Regenerate** when the layout or overall approach needs rethinking
 
 ## Document Types & Quality Thresholds
 

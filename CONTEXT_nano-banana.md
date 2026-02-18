@@ -252,7 +252,7 @@ nano-banana/
    - Avoids code duplication between diagram/image skills
 
 2. **scripts/** subdirectories - Direct CLI execution
-   - `python skills/diagram/scripts/generate_diagram.py`
+   - `python3 skills/diagram/scripts/generate_diagram.py`
    - No package installation required
 
 3. **SKILL.md** files - Skill-specific documentation
@@ -370,7 +370,7 @@ pip install -e ".[dev]"
 export OPENROUTER_API_KEY='sk-or-v1-your-key-here'
 
 # Test diagram generation
-python skills/diagram/scripts/generate_diagram.py \
+python3 skills/diagram/scripts/generate_diagram.py \
     "Test architecture diagram" \
     -o test.png \
     --doc-type architecture \

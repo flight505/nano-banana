@@ -74,7 +74,7 @@ echo ".env" >> .gitignore
 
 Pass the key directly:
 ```bash
-python generate_diagram.py "My diagram" -o diagram.png --api-key sk-or-v1-your-key-here
+python3 generate_diagram.py "My diagram" -o diagram.png --api-key sk-or-v1-your-key-here
 ```
 
 ## Step 4: Verify Installation
@@ -85,10 +85,10 @@ Test that everything works:
 
 ```bash
 # Test diagram generation
-python skills/diagram/scripts/generate_diagram.py "Simple flowchart with start, process, and end boxes" -o test_diagram.png --doc-type presentation
+python3 skills/diagram/scripts/generate_diagram.py "Simple flowchart with start, process, and end boxes" -o test_diagram.png --doc-type presentation
 
 # Test image generation
-python skills/image/scripts/generate_image.py "A simple blue square" -o test_image.png
+python3 skills/image/scripts/generate_image.py "A simple blue square" -o test_image.png
 ```
 
 If successful, you'll see:
@@ -141,13 +141,13 @@ You're all set! Try these commands:
 
 ```bash
 # Generate an architecture diagram
-python skills/diagram/scripts/generate_diagram.py "Microservices architecture with 3 services and a database" -o architecture.png --doc-type architecture
+python3 skills/diagram/scripts/generate_diagram.py "Microservices architecture with 3 services and a database" -o architecture.png --doc-type architecture
 
 # Generate a creative image
-python skills/image/scripts/generate_image.py "A cozy coffee shop interior, warm lighting" -o coffee_shop.png
+python3 skills/image/scripts/generate_image.py "A cozy coffee shop interior, warm lighting" -o coffee_shop.png
 
 # Edit an existing image
-python skills/image/scripts/generate_image.py "Add rain to the window" --input coffee_shop.png -o rainy_coffee_shop.png
+python3 skills/image/scripts/generate_image.py "Add rain to the window" --input coffee_shop.png -o rainy_coffee_shop.png
 ```
 
 See the skill documentation for more examples:

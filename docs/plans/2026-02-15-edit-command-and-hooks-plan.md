@@ -149,7 +149,7 @@ if __name__ == "__main__":
         "hooks": [
           {
             "type": "command",
-            "command": "python ${CLAUDE_PLUGIN_ROOT}/hooks/validate-output.py",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/validate-output.py",
             "timeout": 5000
           }
         ]
@@ -165,27 +165,27 @@ Run these commands to verify the hook handles each case correctly:
 
 ```bash
 # Test 1: Non-matching command (should exit 0, no output)
-echo '{"tool_name":"Bash","tool_input":{"command":"ls -la"},"tool_result":"total 42","cwd":"/tmp"}' | python hooks/validate-output.py
+echo '{"tool_name":"Bash","tool_input":{"command":"ls -la"},"tool_result":"total 42","cwd":"/tmp"}' | python3 hooks/validate-output.py
 echo "Exit: $?"
 # Expected: Exit: 0, no output
 
 # Test 2: Missing API key error (should exit 2 with guidance)
-echo '{"tool_name":"Bash","tool_input":{"command":"python generate_image.py \"test\" -o test.png"},"tool_result":"OPENROUTER_API_KEY not found","cwd":"/tmp"}' | python hooks/validate-output.py 2>&1
+echo '{"tool_name":"Bash","tool_input":{"command":"python3 generate_image.py \"test\" -o test.png"},"tool_result":"OPENROUTER_API_KEY not found","cwd":"/tmp"}' | python3 hooks/validate-output.py 2>&1
 echo "Exit: $?"
 # Expected: Exit: 2, JSON with setup guidance
 
 # Test 3: Timeout error (should exit 2 with guidance)
-echo '{"tool_name":"Bash","tool_input":{"command":"python generate_image.py \"test\" -o test.png"},"tool_result":"Request timed out after 120 seconds","cwd":"/tmp"}' | python hooks/validate-output.py 2>&1
+echo '{"tool_name":"Bash","tool_input":{"command":"python3 generate_image.py \"test\" -o test.png"},"tool_result":"Request timed out after 120 seconds","cwd":"/tmp"}' | python3 hooks/validate-output.py 2>&1
 echo "Exit: $?"
 # Expected: Exit: 2, JSON with timeout guidance
 
 # Test 4: Missing output file (should exit 2)
-echo '{"tool_name":"Bash","tool_input":{"command":"python generate_image.py \"test\" -o /tmp/nonexistent_nano_test.png"},"tool_result":"Image saved to: /tmp/nonexistent_nano_test.png","cwd":"/tmp"}' | python hooks/validate-output.py 2>&1
+echo '{"tool_name":"Bash","tool_input":{"command":"python3 generate_image.py \"test\" -o /tmp/nonexistent_nano_test.png"},"tool_result":"Image saved to: /tmp/nonexistent_nano_test.png","cwd":"/tmp"}' | python3 hooks/validate-output.py 2>&1
 echo "Exit: $?"
 # Expected: Exit: 2, file not created message
 
 # Test 5: Non-Bash tool (should exit 0 immediately)
-echo '{"tool_name":"Read","tool_input":{"file_path":"test.py"},"tool_result":"file contents"}' | python hooks/validate-output.py
+echo '{"tool_name":"Read","tool_input":{"file_path":"test.py"},"tool_result":"file contents"}' | python3 hooks/validate-output.py
 echo "Exit: $?"
 # Expected: Exit: 0, no output
 ```
@@ -342,10 +342,10 @@ And pass it to `generate_iterative` (line ~646):
 ```bash
 # Verify --input flag is recognized (will fail on API key, but confirms parsing works)
 cd skills/diagram/scripts
-python generate_diagram_ai.py "Test edit" -o /tmp/test.png --input /tmp/nonexistent.png 2>&1 | head -5
+python3 generate_diagram_ai.py "Test edit" -o /tmp/test.png --input /tmp/nonexistent.png 2>&1 | head -5
 # Expected: "Error: Input image not found: /tmp/nonexistent.png"
 
-python generate_diagram_ai.py --help | grep -A1 "\-\-input"
+python3 generate_diagram_ai.py --help | grep -A1 "\-\-input"
 # Expected: Shows --input help text
 ```
 
@@ -392,12 +392,12 @@ Arguments: $ARGUMENTS
 
    For **image edits**:
    ```bash
-   python ${CLAUDE_PLUGIN_ROOT}/skills/image/scripts/generate_image.py "<edit-instructions>" --input <source-image> -o <output-path>
+   python3 ${CLAUDE_PLUGIN_ROOT}/skills/image/scripts/generate_image.py "<edit-instructions>" --input <source-image> -o <output-path>
    ```
 
    For **diagram edits**:
    ```bash
-   python ${CLAUDE_PLUGIN_ROOT}/skills/diagram/scripts/generate_diagram_ai.py "<edit-instructions>" --input <source-image> -o <output-path> --doc-type default
+   python3 ${CLAUDE_PLUGIN_ROOT}/skills/diagram/scripts/generate_diagram_ai.py "<edit-instructions>" --input <source-image> -o <output-path> --doc-type default
    ```
 
 4. **Output naming** — save the edited version alongside the original:
@@ -498,7 +498,7 @@ Use `/nano-banana:edit` to modify an existing image, or call the script directly
 /nano-banana:edit sunset.png "Add dramatic storm clouds and lightning"
 
 # Edit via script directly
-python skills/image/scripts/generate_image.py "Add dramatic storm clouds" --input sunset.png -o sunset_edit1.png
+python3 skills/image/scripts/generate_image.py "Add dramatic storm clouds" --input sunset.png -o sunset_edit1.png
 ```
 
 **When to edit vs. regenerate:**
@@ -520,7 +520,7 @@ Use `/nano-banana:edit` to modify an existing diagram, or call the script direct
 /nano-banana:edit architecture.png "Add a Redis cache layer between the API and database"
 
 # Edit via script directly
-python skills/diagram/scripts/generate_diagram_ai.py "Add Redis cache layer" --input architecture.png -o architecture_edit1.png --doc-type architecture
+python3 skills/diagram/scripts/generate_diagram_ai.py "Add Redis cache layer" --input architecture.png -o architecture_edit1.png --doc-type architecture
 ```
 
 **When to edit vs. regenerate:**
@@ -615,7 +615,7 @@ Changes: version 1.0.8 → 1.1.0, added "image-editing" keyword, added "hooks" f
 **Step 2: Verify manifest is valid JSON**
 
 ```bash
-python -c "import json; json.load(open('.claude-plugin/plugin.json')); print('Valid JSON')"
+python3 -c "import json; json.load(open('.claude-plugin/plugin.json')); print('Valid JSON')"
 # Expected: Valid JSON
 ```
 
@@ -642,7 +642,7 @@ ls -la hooks/validate-output.py hooks/hooks.json commands/edit.md
 **Step 2: Verify hooks.json is valid**
 
 ```bash
-python -c "import json; data=json.load(open('hooks/hooks.json')); assert 'hooks' in data; assert 'PostToolUse' in data['hooks']; print('hooks.json valid')"
+python3 -c "import json; data=json.load(open('hooks/hooks.json')); assert 'hooks' in data; assert 'PostToolUse' in data['hooks']; print('hooks.json valid')"
 # Expected: hooks.json valid
 ```
 
@@ -653,7 +653,7 @@ Re-run all 5 hook test cases to confirm they still pass.
 **Step 4: Verify diagram --input flag**
 
 ```bash
-python skills/diagram/scripts/generate_diagram_ai.py --help | grep -A2 "input"
+python3 skills/diagram/scripts/generate_diagram_ai.py --help | grep -A2 "input"
 # Expected: --input flag documented
 ```
 
@@ -661,7 +661,7 @@ python skills/diagram/scripts/generate_diagram_ai.py --help | grep -A2 "input"
 
 ```bash
 # From marketplace root (if accessible)
-cd .. && python .claude/hooks/validators/plugin-manifest-validator.py < <(echo '{"tool_name":"Edit","tool_input":{"file_path":"nano-banana/.claude-plugin/plugin.json"}}') 2>&1; cd nano-banana
+cd .. && python3 .claude/hooks/validators/plugin-manifest-validator.py < <(echo '{"tool_name":"Edit","tool_input":{"file_path":"nano-banana/.claude-plugin/plugin.json"}}') 2>&1; cd nano-banana
 ```
 
 **Step 6: Final commit (if any fixes needed)**

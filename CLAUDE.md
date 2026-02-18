@@ -36,7 +36,7 @@ This is a Claude Code plugin for AI-powered image and diagram generation.
 ### Generate a Diagram
 
 ```bash
-python skills/diagram/scripts/generate_diagram.py "description" -o output.png --doc-type TYPE
+python3 skills/diagram/scripts/generate_diagram.py "description" -o output.png --doc-type TYPE
 ```
 
 **Document Types:** `specification`, `architecture`, `proposal`, `journal`, `conference`, `thesis`, `grant`, `sprint`, `report`, `preprint`, `readme`, `poster`, `presentation`, `default`
@@ -44,13 +44,13 @@ python skills/diagram/scripts/generate_diagram.py "description" -o output.png --
 ### Generate an Image
 
 ```bash
-python skills/image/scripts/generate_image.py "description" -o output.png
+python3 skills/image/scripts/generate_image.py "description" -o output.png
 ```
 
 ### Edit an Image
 
 ```bash
-python skills/image/scripts/generate_image.py "edit instructions" --input source.png -o output.png
+python3 skills/image/scripts/generate_image.py "edit instructions" --input source.png -o output.png
 ```
 
 ## Requirements

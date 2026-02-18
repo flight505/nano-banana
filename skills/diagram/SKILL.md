@@ -33,13 +33,13 @@ Use this skill when you need:
 
 ```bash
 # Generate an architecture diagram
-python skills/diagram/scripts/generate_diagram.py "Microservices architecture with API gateway, auth service, and database" -o architecture.png --doc-type architecture
+python3 skills/diagram/scripts/generate_diagram.py "Microservices architecture with API gateway, auth service, and database" -o architecture.png --doc-type architecture
 
 # Generate a flowchart for a presentation
-python skills/diagram/scripts/generate_diagram.py "User authentication flow with OAuth2" -o auth_flow.png --doc-type presentation
+python3 skills/diagram/scripts/generate_diagram.py "User authentication flow with OAuth2" -o auth_flow.png --doc-type presentation
 
 # Generate with verbose output
-python skills/diagram/scripts/generate_diagram.py "Database schema for e-commerce" -o schema.png -v
+python3 skills/diagram/scripts/generate_diagram.py "Database schema for e-commerce" -o schema.png -v
 ```
 
 ### Editing Existing Diagrams
@@ -51,7 +51,7 @@ Use `/nano-banana:edit` to modify an existing diagram, or call the script direct
 /nano-banana:edit architecture.png "Add a Redis cache layer between the API and database"
 
 # Edit via script directly
-python skills/diagram/scripts/generate_diagram_ai.py "Add Redis cache layer" --input architecture.png -o architecture_edit1.png --doc-type architecture
+python3 skills/diagram/scripts/generate_diagram_ai.py "Add Redis cache layer" --input architecture.png -o architecture_edit1.png --doc-type architecture
 ```
 
 **When to edit vs. regenerate:**
@@ -85,7 +85,7 @@ Different documents have different quality requirements. Nano Banana automatical
 
 ### System Architecture
 ```bash
-python generate_diagram.py "Three-tier web application architecture with:
+python3 generate_diagram.py "Three-tier web application architecture with:
 - React frontend
 - Node.js API layer with load balancer
 - PostgreSQL database with read replicas
@@ -95,7 +95,7 @@ python generate_diagram.py "Three-tier web application architecture with:
 
 ### Sequence Diagram
 ```bash
-python generate_diagram.py "Sequence diagram showing OAuth2 authorization code flow:
+python3 generate_diagram.py "Sequence diagram showing OAuth2 authorization code flow:
 1. User clicks login
 2. App redirects to auth server
 3. User authenticates
@@ -106,7 +106,7 @@ python generate_diagram.py "Sequence diagram showing OAuth2 authorization code f
 
 ### Data Flow
 ```bash
-python generate_diagram.py "Data pipeline showing:
+python3 generate_diagram.py "Data pipeline showing:
 - Data ingestion from multiple sources (API, files, streaming)
 - ETL processing with Apache Spark
 - Data warehouse (Snowflake)
@@ -115,7 +115,7 @@ python generate_diagram.py "Data pipeline showing:
 
 ### C4 Model - Container Diagram
 ```bash
-python generate_diagram.py "C4 Container diagram for e-commerce platform:
+python3 generate_diagram.py "C4 Container diagram for e-commerce platform:
 - Web App (React SPA)
 - Mobile App (React Native)
 - API Gateway (Kong)

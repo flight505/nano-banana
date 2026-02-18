@@ -24,12 +24,12 @@ Arguments: $ARGUMENTS
 
    For **image edits**:
    ```bash
-   python ${CLAUDE_PLUGIN_ROOT}/skills/image/scripts/generate_image.py "<edit-instructions>" --input <source-image> -o <output-path>
+   python3 ${CLAUDE_PLUGIN_ROOT}/skills/image/scripts/generate_image.py "<edit-instructions>" --input <source-image> -o <output-path>
    ```
 
    For **diagram edits**:
    ```bash
-   python ${CLAUDE_PLUGIN_ROOT}/skills/diagram/scripts/generate_diagram_ai.py "<edit-instructions>" --input <source-image> -o <output-path> --doc-type default
+   python3 ${CLAUDE_PLUGIN_ROOT}/skills/diagram/scripts/generate_diagram_ai.py "<edit-instructions>" --input <source-image> -o <output-path> --doc-type default
    ```
 
 4. **Output naming** — save the edited version alongside the original:

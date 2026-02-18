@@ -93,7 +93,7 @@ commands/
         "hooks": [
           {
             "type": "command",
-            "command": "python ${CLAUDE_PLUGIN_ROOT}/hooks/validate-output.py",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/validate-output.py",
             "timeout": 5000
           }
         ]

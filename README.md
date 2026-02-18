@@ -51,13 +51,13 @@ echo "OPENROUTER_API_KEY=sk-or-v1-your-key-here" > .env
 
 ```bash
 # Technical diagram with quality review
-python skills/diagram/scripts/generate_diagram.py \
+python3 skills/diagram/scripts/generate_diagram.py \
     "Microservices architecture with API gateway" \
     -o architecture.png \
     --doc-type architecture
 
 # Creative image
-python skills/image/scripts/generate_image.py \
+python3 skills/image/scripts/generate_image.py \
     "A cozy coffee shop on a rainy day" \
     -o coffee_shop.png
 ```
@@ -69,7 +69,7 @@ python skills/image/scripts/generate_image.py \
 Generate publication-quality technical diagrams with AI quality review.
 
 ```bash
-python skills/diagram/scripts/generate_diagram.py "User authentication flow" -o auth.png --doc-type architecture
+python3 skills/diagram/scripts/generate_diagram.py "User authentication flow" -o auth.png --doc-type architecture
 ```
 
 **Document Types:**
@@ -89,10 +89,10 @@ Generate and edit images using various AI models.
 
 ```bash
 # Generate
-python skills/image/scripts/generate_image.py "Abstract art in blue and gold" -o art.png
+python3 skills/image/scripts/generate_image.py "Abstract art in blue and gold" -o art.png
 
 # Edit existing image
-python skills/image/scripts/generate_image.py "Make the sky purple" --input photo.jpg -o edited.png
+python3 skills/image/scripts/generate_image.py "Make the sky purple" --input photo.jpg -o edited.png
 ```
 
 **Available Models:**

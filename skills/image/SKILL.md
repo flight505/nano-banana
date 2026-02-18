@@ -34,13 +34,13 @@ Use this skill when you need:
 
 ```bash
 # Generate a new image
-python skills/image/scripts/generate_image.py "A beautiful sunset over mountains with orange and purple sky" -o sunset.png
+python3 skills/image/scripts/generate_image.py "A beautiful sunset over mountains with orange and purple sky" -o sunset.png
 
 # Edit an existing image
-python skills/image/scripts/generate_image.py "Make the sky more dramatic with storm clouds" --input sunset.png -o dramatic_sunset.png
+python3 skills/image/scripts/generate_image.py "Make the sky more dramatic with storm clouds" --input sunset.png -o dramatic_sunset.png
 
 # Use a specific model
-python skills/image/scripts/generate_image.py "Abstract geometric art in blue and gold" -m "black-forest-labs/flux.2-pro" -o abstract.png
+python3 skills/image/scripts/generate_image.py "Abstract geometric art in blue and gold" -m "black-forest-labs/flux.2-pro" -o abstract.png
 ```
 
 ### Editing Existing Images
@@ -52,7 +52,7 @@ Use `/nano-banana:edit` to modify an existing image, or call the script directly
 /nano-banana:edit sunset.png "Add dramatic storm clouds and lightning"
 
 # Edit via script directly
-python skills/image/scripts/generate_image.py "Add dramatic storm clouds" --input sunset.png -o sunset_edit1.png
+python3 skills/image/scripts/generate_image.py "Add dramatic storm clouds" --input sunset.png -o sunset_edit1.png
 ```
 
 **When to edit vs. regenerate:**
@@ -73,42 +73,42 @@ python skills/image/scripts/generate_image.py "Add dramatic storm clouds" --inpu
 
 ```bash
 # Photorealistic
-python generate_image.py "Professional headshot of a business executive in modern office setting" -o headshot.png
+python3 generate_image.py "Professional headshot of a business executive in modern office setting" -o headshot.png
 
 # Artistic
-python generate_image.py "Watercolor painting of a cozy coffee shop on a rainy day" -o coffee_shop.png
+python3 generate_image.py "Watercolor painting of a cozy coffee shop on a rainy day" -o coffee_shop.png
 
 # Abstract
-python generate_image.py "Abstract visualization of data flowing through neural networks, blue and cyan colors" -o neural_flow.png
+python3 generate_image.py "Abstract visualization of data flowing through neural networks, blue and cyan colors" -o neural_flow.png
 
 # Product
-python generate_image.py "Modern minimalist logo for a tech startup called 'Nexus', clean geometric design" -o logo.png
+python3 generate_image.py "Modern minimalist logo for a tech startup called 'Nexus', clean geometric design" -o logo.png
 ```
 
 ### Edit Existing Images
 
 ```bash
 # Change colors
-python generate_image.py "Change the car color to red" --input car.jpg -o red_car.png
+python3 generate_image.py "Change the car color to red" --input car.jpg -o red_car.png
 
 # Add elements
-python generate_image.py "Add a rainbow in the sky" --input landscape.jpg -o rainbow_landscape.png
+python3 generate_image.py "Add a rainbow in the sky" --input landscape.jpg -o rainbow_landscape.png
 
 # Remove elements
-python generate_image.py "Remove the person from the background" --input photo.jpg -o clean_photo.png
+python3 generate_image.py "Remove the person from the background" --input photo.jpg -o clean_photo.png
 
 # Style transfer
-python generate_image.py "Make this look like a watercolor painting" --input photo.jpg -o watercolor.png
+python3 generate_image.py "Make this look like a watercolor painting" --input photo.jpg -o watercolor.png
 ```
 
 ### Specify Output Format
 
 ```bash
 # PNG (default, best for graphics with transparency)
-python generate_image.py "Icon of a rocket ship" -o rocket.png
+python3 generate_image.py "Icon of a rocket ship" -o rocket.png
 
 # Output to specific directory
-python generate_image.py "Banner image" -o assets/images/banner.png
+python3 generate_image.py "Banner image" -o assets/images/banner.png
 ```
 
 ## Configuration

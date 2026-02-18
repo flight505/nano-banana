@@ -25,5 +25,5 @@
     "./skills/image",
     "./skills/mermaid"
   ],
-  "hooks": "./hooks"
+  "hooks": "./hooks/hooks.json"
 }

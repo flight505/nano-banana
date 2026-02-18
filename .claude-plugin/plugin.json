@@ -24,6 +24,5 @@
     "./skills/diagram",
     "./skills/image",
     "./skills/mermaid"
-  ],
-  "hooks": "./hooks/hooks.json"
+  ]
 }

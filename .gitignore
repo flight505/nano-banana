@@ -1,3 +1,6 @@
+# Local Claude Code config (toolkit symlinks)
+.claude/
+
 # Python
 __pycache__/
 *.py[cod]

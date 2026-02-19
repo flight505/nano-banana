@@ -32,6 +32,8 @@ import time
 import urllib.request
 import urllib.error
 import socket
+import subprocess
+import tempfile
 from pathlib import Path
 from typing import Optional
 
@@ -103,7 +105,8 @@ def _convert_to_png(data: bytes) -> bytes:
         return buf.getvalue()
     except ImportError:
         pass
-    import subprocess, tempfile
+    tmp_in_path = None
+    tmp_out_path = None
     try:
         with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp_in:
             tmp_in.write(data)
@@ -115,12 +118,17 @@ def _convert_to_png(data: bytes) -> bytes:
         )
         with open(tmp_out_path, "rb") as f:
             png_data = f.read()
-        os.unlink(tmp_in_path)
-        os.unlink(tmp_out_path)
         if png_data[:8] == b'\x89PNG\r\n\x1a\n':
             return png_data
     except Exception:
         pass
+    finally:
+        for p in (tmp_in_path, tmp_out_path):
+            if p:
+                try:
+                    os.unlink(p)
+                except Exception:
+                    pass
     return data
 
 
@@ -307,8 +315,6 @@ def generate_image(
         # Strip google/ prefix if user passed OpenRouter-style model name
         if model.startswith("google/"):
             model = model.split("/", 1)[1]
-        elif model == "google/gemini-3-pro-image-preview":
-            model = default_model
         # For non-Google models with Google provider, use default
         if not model.startswith("gemini"):
             model = default_model

@@ -1,6 +1,6 @@
 ---
 name: image
-description: "Generate and edit images using AI models via OpenRouter. Supports Nano Banana Pro (Gemini 3 Pro Image), FLUX, and other image generation models."
+description: "Generate and edit images using AI models. Supports Google Gemini API (preferred) and OpenRouter (FLUX, etc.)."
 allowed-tools: [Read, Write, Edit, Bash]
 disable-model-invocation: true
 ---
@@ -113,21 +113,25 @@ python3 generate_image.py "Banner image" -o assets/images/banner.png
 
 ## Configuration
 
-### Environment Variable (Recommended)
+### Option 1: Google Gemini API (Recommended)
+```bash
+export GEMINI_API_KEY='your_gemini_key_here'
+```
+Get a key at https://aistudio.google.com/apikey (free tier available).
+
+### Option 2: OpenRouter (Alternative)
 ```bash
 export OPENROUTER_API_KEY='your_api_key_here'
 ```
+Get a key at https://openrouter.ai/keys. Required for non-Google models (FLUX, etc.).
 
 ### .env File
-Create a `.env` file in your project:
+Create a `.env` file in your project with either key:
 ```
-OPENROUTER_API_KEY=your_api_key_here
+GEMINI_API_KEY=your_gemini_key_here
 ```
 
-### Get Your API Key
-1. Go to https://openrouter.ai/keys
-2. Create a new API key
-3. Add credits to your account
+**Auto-detection:** When both keys are set, the Google direct API is preferred. Use `--provider openrouter` to force OpenRouter.
 
 ## Python API
 

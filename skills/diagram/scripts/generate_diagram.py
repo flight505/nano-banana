@@ -83,7 +83,10 @@ Environment Variables:
     parser.add_argument("--iterations", type=int, default=2,
                        help="Maximum refinement iterations (default: 2, max: 2)")
     parser.add_argument("--api-key",
-                       help="OpenRouter API key (or use OPENROUTER_API_KEY env var)")
+                       help="API key (or use GEMINI_API_KEY / OPENROUTER_API_KEY env var)")
+    parser.add_argument("--provider", choices=["auto", "google", "openrouter"],
+                       default="auto",
+                       help="API provider (default: auto — prefers Google)")
     parser.add_argument("--input", "-i", type=str,
                        help="Input diagram image to edit (enables edit mode)")
     parser.add_argument("--timeout", type=int, default=120,
@@ -93,14 +96,13 @@ Environment Variables:
 
     args = parser.parse_args()
 
-    # Check for API key
-    api_key = args.api_key or os.getenv("OPENROUTER_API_KEY")
+    # Check for API key (prefer GEMINI_API_KEY, fall back to OPENROUTER_API_KEY)
+    api_key = args.api_key or os.getenv("GEMINI_API_KEY") or os.getenv("OPENROUTER_API_KEY")
     if not api_key:
-        print("Error: OPENROUTER_API_KEY environment variable not set")
-        print("\nFor AI generation, you need an OpenRouter API key.")
-        print("Get one at: https://openrouter.ai/keys")
-        print("\nSet it with:")
-        print("  export OPENROUTER_API_KEY='your_api_key'")
+        print("Error: No API key found")
+        print("\nSet one of these environment variables:")
+        print("  export GEMINI_API_KEY='your-key'    # Preferred (free tier)")
+        print("  export OPENROUTER_API_KEY='your-key' # Alternative")
         print("\nOr use --api-key flag")
         sys.exit(1)
 
@@ -125,6 +127,9 @@ Environment Variables:
 
     if api_key:
         cmd.extend(["--api-key", api_key])
+
+    if args.provider != "auto":
+        cmd.extend(["--provider", args.provider])
 
     if args.input:
         if not os.path.exists(args.input):

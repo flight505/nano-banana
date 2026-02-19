@@ -27,7 +27,10 @@ import sys
 import time
 import urllib.request
 import urllib.error
+import shutil
 import socket
+import subprocess
+import tempfile
 from pathlib import Path
 from typing import Optional, Dict, Any, List, Tuple
 
@@ -208,10 +211,6 @@ LAYOUT:
             print(f"[{time.strftime('%H:%M:%S')}] {message}")
 
     @staticmethod
-    def _is_png(data: bytes) -> bool:
-        return data[:8] == b'\x89PNG\r\n\x1a\n'
-
-    @staticmethod
     def _convert_to_png(data: bytes) -> bytes:
         """Convert image bytes to PNG format if needed."""
         if data[:8] == b'\x89PNG\r\n\x1a\n':
@@ -227,7 +226,8 @@ LAYOUT:
         except ImportError:
             pass
         # Try macOS sips
-        import subprocess, tempfile
+        tmp_in_path = None
+        tmp_out_path = None
         try:
             with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp_in:
                 tmp_in.write(data)
@@ -239,15 +239,17 @@ LAYOUT:
             )
             with open(tmp_out_path, "rb") as f:
                 png_data = f.read()
-            os.unlink(tmp_in_path)
-            os.unlink(tmp_out_path)
             if png_data[:8] == b'\x89PNG\r\n\x1a\n':
                 return png_data
         except Exception:
-            try:
-                os.unlink(tmp_in_path)
-            except Exception:
-                pass
+            pass
+        finally:
+            for p in (tmp_in_path, tmp_out_path):
+                if p:
+                    try:
+                        os.unlink(p)
+                    except Exception:
+                        pass
         return data  # fallback: return original
 
     def _make_google_request(self, model: str, parts: List[Dict[str, Any]],
@@ -600,7 +602,6 @@ LAYOUT:
                     iteration: int, doc_type: str = "default",
                     max_iterations: int = 2) -> Tuple[str, float, bool]:
         """Review generated image using Gemini 3 Pro for quality analysis."""
-        image_data_url = self._image_to_base64(image_path)
         threshold = self.QUALITY_THRESHOLDS.get(doc_type.lower(),
                                                  self.QUALITY_THRESHOLDS["default"])
 
@@ -639,6 +640,7 @@ If score < {threshold}, mark as NEEDS_IMPROVEMENT with specific suggestions."""
             if self.provider == "google":
                 content = self._review_image_google(image_path, review_prompt)
             else:
+                image_data_url = self._image_to_base64(image_path)
                 content = self._review_image_openrouter(image_data_url, review_prompt)
 
             # Extract score
@@ -767,8 +769,7 @@ Generate a publication-quality technical diagram that meets all the guidelines a
                 continue
 
             # Convert to PNG if output requests .png
-            if extension.lower() == ".png" and not self._is_png(image_data):
-                self._log("Converting to PNG...")
+            if extension.lower() == ".png":
                 image_data = self._convert_to_png(image_data)
 
             iter_path = output_dir / f"{base_name}_v{i}{extension}"
@@ -820,7 +821,6 @@ Generate a publication-quality technical diagram that meets all the guidelines a
         if results["success"] and results["final_image"]:
             final_iter_path = Path(results["final_image"])
             if final_iter_path != Path(output_path):
-                import shutil
                 shutil.copy(final_iter_path, output_path)
                 print(f"\n✓ Final image: {output_path}")
 

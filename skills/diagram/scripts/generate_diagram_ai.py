@@ -9,7 +9,7 @@ This script uses a smart iterative refinement approach:
 4. Repeat until quality meets standards (max iterations)
 
 Requirements:
-    - OPENROUTER_API_KEY environment variable
+    - GEMINI_API_KEY (preferred) or OPENROUTER_API_KEY environment variable
     - Python 3.8+ (uses stdlib only, no external dependencies)
 
 Usage:
@@ -141,43 +141,191 @@ LAYOUT:
 - No clutter or unnecessary decorative elements
 """
 
-    def __init__(self, api_key: Optional[str] = None, verbose: bool = False, timeout: int = 120):
+    def __init__(self, api_key: Optional[str] = None, verbose: bool = False,
+                 timeout: int = 120, provider: str = "auto"):
         """
         Initialize the generator.
 
         Args:
-            api_key: OpenRouter API key (or use OPENROUTER_API_KEY env var)
+            api_key: API key (Google or OpenRouter, depending on provider)
             verbose: Print detailed progress information
             timeout: Request timeout in seconds (default: 120)
+            provider: API provider - "auto" (prefer Google), "google", or "openrouter"
         """
-        self.api_key = api_key or os.getenv("OPENROUTER_API_KEY")
-
-        if not self.api_key:
-            _load_env_file()
-            self.api_key = os.getenv("OPENROUTER_API_KEY")
-
-        if not self.api_key:
-            raise ValueError(
-                "OPENROUTER_API_KEY not found. Please either:\n"
-                "  1. Set the OPENROUTER_API_KEY environment variable\n"
-                "  2. Add OPENROUTER_API_KEY to your .env file\n"
-                "  3. Pass api_key parameter to the constructor\n"
-                "Get your API key from: https://openrouter.ai/keys"
-            )
-
         self.verbose = verbose
         self.timeout = timeout
         self._last_error = None
-        self.base_url = "https://openrouter.ai/api/v1"
-        # Nano Banana Pro - Google's Gemini 3 Pro image generation
-        self.image_model = "google/gemini-3-pro-image-preview"
-        # Gemini 3 Pro for quality review
-        self.review_model = "google/gemini-3-pro-preview"
+
+        # Provider auto-detection: prefer Google direct API
+        _load_env_file()
+
+        if provider == "auto":
+            gemini_key = api_key if api_key and not api_key.startswith("sk-or-") else os.getenv("GEMINI_API_KEY")
+            openrouter_key = api_key if api_key and api_key.startswith("sk-or-") else os.getenv("OPENROUTER_API_KEY")
+            if gemini_key:
+                self.provider = "google"
+                self.api_key = gemini_key
+            elif openrouter_key:
+                self.provider = "openrouter"
+                self.api_key = openrouter_key
+            else:
+                raise ValueError(
+                    "No API key found. Please set one of:\n"
+                    "  1. GEMINI_API_KEY (preferred, free tier at https://aistudio.google.com/apikey)\n"
+                    "  2. OPENROUTER_API_KEY (https://openrouter.ai/keys)\n"
+                    "  3. Pass api_key parameter to the constructor"
+                )
+        elif provider == "google":
+            self.provider = "google"
+            self.api_key = api_key or os.getenv("GEMINI_API_KEY")
+            if not self.api_key:
+                raise ValueError(
+                    "GEMINI_API_KEY not found. Get one at: https://aistudio.google.com/apikey"
+                )
+        else:  # openrouter
+            self.provider = "openrouter"
+            self.api_key = api_key or os.getenv("OPENROUTER_API_KEY")
+            if not self.api_key:
+                raise ValueError(
+                    "OPENROUTER_API_KEY not found. Get one at: https://openrouter.ai/keys"
+                )
+
+        # Provider-specific configuration
+        if self.provider == "google":
+            self.base_url = "https://generativelanguage.googleapis.com/v1beta"
+            self.image_model = "gemini-3-pro-image-preview"
+            self.review_model = "gemini-3-pro-preview"
+        else:
+            self.base_url = "https://openrouter.ai/api/v1"
+            self.image_model = "google/gemini-3-pro-image-preview"
+            self.review_model = "google/gemini-3-pro-preview"
+
+        self._log(f"Provider: {self.provider} | Image model: {self.image_model}")
 
     def _log(self, message: str):
         """Log message if verbose mode is enabled."""
         if self.verbose:
             print(f"[{time.strftime('%H:%M:%S')}] {message}")
+
+    @staticmethod
+    def _is_png(data: bytes) -> bool:
+        return data[:8] == b'\x89PNG\r\n\x1a\n'
+
+    @staticmethod
+    def _convert_to_png(data: bytes) -> bytes:
+        """Convert image bytes to PNG format if needed."""
+        if data[:8] == b'\x89PNG\r\n\x1a\n':
+            return data
+        # Try PIL
+        try:
+            from PIL import Image
+            import io
+            img = Image.open(io.BytesIO(data))
+            buf = io.BytesIO()
+            img.save(buf, format="PNG")
+            return buf.getvalue()
+        except ImportError:
+            pass
+        # Try macOS sips
+        import subprocess, tempfile
+        try:
+            with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp_in:
+                tmp_in.write(data)
+                tmp_in_path = tmp_in.name
+            tmp_out_path = tmp_in_path.replace(".jpg", ".png")
+            subprocess.run(
+                ["sips", "-s", "format", "png", tmp_in_path, "--out", tmp_out_path],
+                capture_output=True, timeout=10
+            )
+            with open(tmp_out_path, "rb") as f:
+                png_data = f.read()
+            os.unlink(tmp_in_path)
+            os.unlink(tmp_out_path)
+            if png_data[:8] == b'\x89PNG\r\n\x1a\n':
+                return png_data
+        except Exception:
+            try:
+                os.unlink(tmp_in_path)
+            except Exception:
+                pass
+        return data  # fallback: return original
+
+    def _make_google_request(self, model: str, parts: List[Dict[str, Any]],
+                            response_modalities: Optional[List[str]] = None) -> Dict[str, Any]:
+        """Make a request to Google Gemini API directly."""
+        url = f"{self.base_url}/models/{model}:generateContent?key={self.api_key}"
+
+        payload: Dict[str, Any] = {
+            "contents": [{"parts": parts}]
+        }
+
+        if response_modalities:
+            payload["generationConfig"] = {"responseModalities": response_modalities}
+
+        self._log(f"Making Google API request to {model}...")
+
+        data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(
+            url, data=data,
+            headers={"Content-Type": "application/json"},
+            method="POST"
+        )
+
+        try:
+            with urllib.request.urlopen(req, timeout=self.timeout) as response:
+                response_body = response.read().decode("utf-8")
+                return json.loads(response_body)
+        except urllib.error.HTTPError as e:
+            error_body = ""
+            try:
+                error_body = e.read().decode("utf-8")
+                error_json = json.loads(error_body)
+                error_detail = error_json.get("error", {}).get("message", error_body)
+            except (json.JSONDecodeError, Exception):
+                error_detail = error_body or str(e)
+            self._log(f"HTTP {e.code}: {error_detail}")
+            raise RuntimeError(f"Google API request failed (HTTP {e.code}): {error_detail}")
+        except urllib.error.URLError as e:
+            if isinstance(e.reason, socket.timeout):
+                raise RuntimeError(f"Google API request timed out after {self.timeout}s")
+            raise RuntimeError(f"Google API request failed: {e.reason}")
+        except socket.timeout:
+            raise RuntimeError(f"Google API request timed out after {self.timeout}s")
+
+    def _extract_image_from_google_response(self, response: Dict[str, Any]) -> Optional[bytes]:
+        """Extract image data from Google Gemini API response."""
+        try:
+            candidates = response.get("candidates", [])
+            if not candidates:
+                self._log("No candidates in Google response")
+                return None
+
+            parts = candidates[0].get("content", {}).get("parts", [])
+            for part in parts:
+                if "inlineData" in part:
+                    mime_type = part["inlineData"].get("mimeType", "")
+                    if mime_type.startswith("image/"):
+                        b64_data = part["inlineData"]["data"]
+                        self._log(f"Found image in Google response ({mime_type}, {len(b64_data)} chars base64)")
+                        return base64.b64decode(b64_data)
+
+            self._log("No image data found in Google response")
+            return None
+        except Exception as e:
+            self._log(f"Error extracting image from Google response: {e}")
+            return None
+
+    def _extract_text_from_google_response(self, response: Dict[str, Any]) -> str:
+        """Extract text content from Google Gemini API response."""
+        try:
+            candidates = response.get("candidates", [])
+            if not candidates:
+                return ""
+            parts = candidates[0].get("content", {}).get("parts", [])
+            text_parts = [p["text"] for p in parts if "text" in p]
+            return "\n".join(text_parts)
+        except Exception:
+            return ""
 
     def _make_request(self, model: str, messages: List[Dict[str, Any]],
                      modalities: Optional[List[str]] = None) -> Dict[str, Any]:
@@ -316,6 +464,55 @@ LAYOUT:
         """
         self._last_error = None
 
+        try:
+            if self.provider == "google":
+                return self._generate_image_google(prompt, input_image)
+            else:
+                return self._generate_image_openrouter(prompt, input_image)
+        except RuntimeError as e:
+            self._last_error = str(e)
+            self._log(f"✗ Generation failed: {self._last_error}")
+            return None
+        except Exception as e:
+            self._last_error = f"Unexpected error: {str(e)}"
+            self._log(f"✗ Generation failed: {self._last_error}")
+            return None
+
+    def _generate_image_google(self, prompt: str, input_image: Optional[str] = None) -> Optional[bytes]:
+        """Generate image via Google Gemini API directly."""
+        parts: List[Dict[str, Any]] = [{"text": prompt}]
+
+        if input_image:
+            with open(input_image, "rb") as f:
+                img_bytes = f.read()
+            ext = Path(input_image).suffix.lower()
+            mime = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+                    ".gif": "image/gif", ".webp": "image/webp"}.get(ext, "image/png")
+            parts.append({"inline_data": {"mime_type": mime, "data": base64.b64encode(img_bytes).decode()}})
+
+        response = self._make_google_request(
+            model=self.image_model, parts=parts,
+            response_modalities=["TEXT", "IMAGE"]
+        )
+
+        if "error" in response:
+            error_msg = response["error"]
+            if isinstance(error_msg, dict):
+                error_msg = error_msg.get("message", str(error_msg))
+            self._last_error = f"API Error: {error_msg}"
+            print(f"✗ {self._last_error}")
+            return None
+
+        image_data = self._extract_image_from_google_response(response)
+        if image_data:
+            self._log(f"✓ Generated image ({len(image_data)} bytes)")
+        else:
+            self._last_error = "No image data in Google API response"
+            self._log(f"✗ {self._last_error}")
+        return image_data
+
+    def _generate_image_openrouter(self, prompt: str, input_image: Optional[str] = None) -> Optional[bytes]:
+        """Generate image via OpenRouter API."""
         if input_image:
             image_data_url = self._image_to_base64(input_image)
             message_content = [
@@ -327,37 +524,77 @@ LAYOUT:
 
         messages = [{"role": "user", "content": message_content}]
 
-        try:
-            response = self._make_request(
-                model=self.image_model,
-                messages=messages,
-                modalities=["image", "text"]
-            )
+        response = self._make_request(
+            model=self.image_model,
+            messages=messages,
+            modalities=["image", "text"]
+        )
 
-            if "error" in response:
-                error_msg = response["error"]
-                if isinstance(error_msg, dict):
-                    error_msg = error_msg.get("message", str(error_msg))
-                self._last_error = f"API Error: {error_msg}"
-                print(f"✗ {self._last_error}")
-                return None
-
-            image_data = self._extract_image_from_response(response)
-            if image_data:
-                self._log(f"✓ Generated image ({len(image_data)} bytes)")
-            else:
-                self._last_error = "No image data in API response"
-                self._log(f"✗ {self._last_error}")
-
-            return image_data
-        except RuntimeError as e:
-            self._last_error = str(e)
-            self._log(f"✗ Generation failed: {self._last_error}")
+        if "error" in response:
+            error_msg = response["error"]
+            if isinstance(error_msg, dict):
+                error_msg = error_msg.get("message", str(error_msg))
+            self._last_error = f"API Error: {error_msg}"
+            print(f"✗ {self._last_error}")
             return None
-        except Exception as e:
-            self._last_error = f"Unexpected error: {str(e)}"
-            self._log(f"✗ Generation failed: {self._last_error}")
-            return None
+
+        image_data = self._extract_image_from_response(response)
+        if image_data:
+            self._log(f"✓ Generated image ({len(image_data)} bytes)")
+        else:
+            self._last_error = "No image data in API response"
+            self._log(f"✗ {self._last_error}")
+        return image_data
+
+    def _review_image_google(self, image_path: str, review_prompt: str) -> str:
+        """Send review request via Google Gemini API."""
+        with open(image_path, "rb") as f:
+            img_bytes = f.read()
+        ext = Path(image_path).suffix.lower()
+        mime = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+                ".gif": "image/gif", ".webp": "image/webp"}.get(ext, "image/png")
+
+        parts: List[Dict[str, Any]] = [
+            {"text": review_prompt},
+            {"inline_data": {"mime_type": mime, "data": base64.b64encode(img_bytes).decode()}}
+        ]
+
+        response = self._make_google_request(model=self.review_model, parts=parts)
+        return self._extract_text_from_google_response(response)
+
+    def _review_image_openrouter(self, image_data_url: str, review_prompt: str) -> str:
+        """Send review request via OpenRouter API."""
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": review_prompt},
+                    {"type": "image_url", "image_url": {"url": image_data_url}}
+                ]
+            }
+        ]
+
+        response = self._make_request(model=self.review_model, messages=messages)
+
+        choices = response.get("choices", [])
+        if not choices:
+            return ""
+
+        message = choices[0].get("message", {})
+        content = message.get("content", "")
+
+        reasoning = message.get("reasoning", "")
+        if reasoning and not content:
+            content = reasoning
+
+        if isinstance(content, list):
+            text_parts = []
+            for block in content:
+                if isinstance(block, dict) and block.get("type") == "text":
+                    text_parts.append(block.get("text", ""))
+            content = "\n".join(text_parts)
+
+        return content
 
     def review_image(self, image_path: str, original_prompt: str,
                     iteration: int, doc_type: str = "default",
@@ -398,36 +635,11 @@ VERDICT: [ACCEPTABLE or NEEDS_IMPROVEMENT]
 If score >= {threshold}, the diagram is ACCEPTABLE for {doc_type}.
 If score < {threshold}, mark as NEEDS_IMPROVEMENT with specific suggestions."""
 
-        messages = [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": review_prompt},
-                    {"type": "image_url", "image_url": {"url": image_data_url}}
-                ]
-            }
-        ]
-
         try:
-            response = self._make_request(model=self.review_model, messages=messages)
-
-            choices = response.get("choices", [])
-            if not choices:
-                return "Image generated successfully", 8.0, False
-
-            message = choices[0].get("message", {})
-            content = message.get("content", "")
-
-            reasoning = message.get("reasoning", "")
-            if reasoning and not content:
-                content = reasoning
-
-            if isinstance(content, list):
-                text_parts = []
-                for block in content:
-                    if isinstance(block, dict) and block.get("type") == "text":
-                        text_parts.append(block.get("text", ""))
-                content = "\n".join(text_parts)
+            if self.provider == "google":
+                content = self._review_image_google(image_path, review_prompt)
+            else:
+                content = self._review_image_openrouter(image_data_url, review_prompt)
 
             # Extract score
             score = 7.5
@@ -524,6 +736,7 @@ Generate a publication-quality technical diagram that meets all the guidelines a
             print(f"Edit: {user_prompt}")
         else:
             print(f"Description: {user_prompt}")
+        print(f"Provider: {self.provider} ({self.image_model})")
         print(f"Document Type: {doc_type}")
         print(f"Quality Threshold: {threshold}/10")
         print(f"Max Iterations: {iterations}")
@@ -552,6 +765,11 @@ Generate a publication-quality technical diagram that meets all the guidelines a
                     "error": error_msg
                 })
                 continue
+
+            # Convert to PNG if output requests .png
+            if extension.lower() == ".png" and not self._is_png(image_data):
+                self._log("Converting to PNG...")
+                image_data = self._convert_to_png(image_data)
 
             iter_path = output_dir / f"{base_name}_v{i}{extension}"
             with open(iter_path, "wb") as f:
@@ -601,7 +819,7 @@ Generate a publication-quality technical diagram that meets all the guidelines a
         # Copy final version to output path
         if results["success"] and results["final_image"]:
             final_iter_path = Path(results["final_image"])
-            if final_iter_path != output_path:
+            if final_iter_path != Path(output_path):
                 import shutil
                 shutil.copy(final_iter_path, output_path)
                 print(f"\n✓ Final image: {output_path}")
@@ -661,7 +879,8 @@ Note: Multiple iterations only occur if quality is BELOW the threshold.
       If the first generation meets the threshold, no extra API calls are made.
 
 Environment:
-  OPENROUTER_API_KEY    OpenRouter API key (required)
+  GEMINI_API_KEY        Google Gemini API key (preferred, free tier)
+  OPENROUTER_API_KEY    OpenRouter API key (fallback)
         """
     )
 
@@ -675,21 +894,16 @@ Environment:
                        help="Document type for quality threshold (default: default)")
     parser.add_argument("--input", "-i", type=str,
                        help="Input diagram image to edit (enables edit mode)")
-    parser.add_argument("--api-key", help="OpenRouter API key (or set OPENROUTER_API_KEY)")
+    parser.add_argument("--provider", default="auto",
+                       choices=["auto", "google", "openrouter"],
+                       help="API provider: auto (prefer Google), google, or openrouter (default: auto)")
+    parser.add_argument("--api-key", help="API key (or set GEMINI_API_KEY / OPENROUTER_API_KEY)")
     parser.add_argument("--timeout", type=int, default=120,
                        help="Request timeout in seconds (default: 120)")
     parser.add_argument("-v", "--verbose", action="store_true",
                        help="Verbose output")
 
     args = parser.parse_args()
-
-    api_key = args.api_key or os.getenv("OPENROUTER_API_KEY")
-    if not api_key:
-        print("Error: OPENROUTER_API_KEY environment variable not set")
-        print("\nSet it with:")
-        print("  export OPENROUTER_API_KEY='your_api_key'")
-        print("\nOr provide via --api-key flag")
-        sys.exit(1)
 
     if args.iterations < 1 or args.iterations > 2:
         print("Error: Iterations must be between 1 and 2")
@@ -700,7 +914,10 @@ Environment:
         sys.exit(1)
 
     try:
-        generator = NanoBananaGenerator(api_key=api_key, verbose=args.verbose, timeout=args.timeout)
+        generator = NanoBananaGenerator(
+            api_key=args.api_key, verbose=args.verbose,
+            timeout=args.timeout, provider=args.provider
+        )
         results = generator.generate_iterative(
             user_prompt=args.prompt,
             output_path=args.output,

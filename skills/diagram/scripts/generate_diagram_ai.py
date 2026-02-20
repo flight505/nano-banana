@@ -29,52 +29,13 @@ import urllib.request
 import urllib.error
 import shutil
 import socket
-import subprocess
-import tempfile
 from pathlib import Path
 from typing import Optional, Dict, Any, List, Tuple
 
-
-def _load_env_file():
-    """Load .env file from current directory or parent directories.
-
-    Returns True if a .env file was found and loaded, False otherwise.
-    Note: This does NOT override existing environment variables.
-    """
-    try:
-        from dotenv import load_dotenv
-    except ImportError:
-        return False
-
-    # Try current working directory first
-    env_path = Path.cwd() / ".env"
-    if env_path.exists():
-        load_dotenv(dotenv_path=env_path, override=False)
-        return True
-
-    # Try parent directories (up to 5 levels)
-    cwd = Path.cwd()
-    for _ in range(5):
-        env_path = cwd / ".env"
-        if env_path.exists():
-            load_dotenv(dotenv_path=env_path, override=False)
-            return True
-        cwd = cwd.parent
-        if cwd == cwd.parent:
-            break
-
-    # Try the script's parent directory
-    script_dir = Path(__file__).resolve().parent
-    for _ in range(5):
-        env_path = script_dir / ".env"
-        if env_path.exists():
-            load_dotenv(dotenv_path=env_path, override=False)
-            return True
-        script_dir = script_dir.parent
-        if script_dir == script_dir.parent:
-            break
-
-    return False
+# Add skills/ to path for common imports
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+from common.image_utils import convert_to_png, get_mime_type, image_to_base64_url  # noqa: E402
+from common.env import load_env_value  # noqa: E402
 
 
 class NanoBananaGenerator:
@@ -160,11 +121,11 @@ LAYOUT:
         self._last_error = None
 
         # Provider auto-detection: prefer Google direct API
-        _load_env_file()
-
         if provider == "auto":
-            gemini_key = api_key if api_key and not api_key.startswith("sk-or-") else os.getenv("GEMINI_API_KEY")
-            openrouter_key = api_key if api_key and api_key.startswith("sk-or-") else os.getenv("OPENROUTER_API_KEY")
+            gemini_key = api_key if api_key and not api_key.startswith("sk-or-") else (
+                os.getenv("GEMINI_API_KEY") or load_env_value("GEMINI_API_KEY"))
+            openrouter_key = api_key if api_key and api_key.startswith("sk-or-") else (
+                os.getenv("OPENROUTER_API_KEY") or load_env_value("OPENROUTER_API_KEY"))
             if gemini_key:
                 self.provider = "google"
                 self.api_key = gemini_key
@@ -180,14 +141,14 @@ LAYOUT:
                 )
         elif provider == "google":
             self.provider = "google"
-            self.api_key = api_key or os.getenv("GEMINI_API_KEY")
+            self.api_key = api_key or os.getenv("GEMINI_API_KEY") or load_env_value("GEMINI_API_KEY")
             if not self.api_key:
                 raise ValueError(
                     "GEMINI_API_KEY not found. Get one at: https://aistudio.google.com/apikey"
                 )
         else:  # openrouter
             self.provider = "openrouter"
-            self.api_key = api_key or os.getenv("OPENROUTER_API_KEY")
+            self.api_key = api_key or os.getenv("OPENROUTER_API_KEY") or load_env_value("OPENROUTER_API_KEY")
             if not self.api_key:
                 raise ValueError(
                     "OPENROUTER_API_KEY not found. Get one at: https://openrouter.ai/keys"
@@ -213,44 +174,7 @@ LAYOUT:
     @staticmethod
     def _convert_to_png(data: bytes) -> bytes:
         """Convert image bytes to PNG format if needed."""
-        if data[:8] == b'\x89PNG\r\n\x1a\n':
-            return data
-        # Try PIL
-        try:
-            from PIL import Image
-            import io
-            img = Image.open(io.BytesIO(data))
-            buf = io.BytesIO()
-            img.save(buf, format="PNG")
-            return buf.getvalue()
-        except ImportError:
-            pass
-        # Try macOS sips
-        tmp_in_path = None
-        tmp_out_path = None
-        try:
-            with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp_in:
-                tmp_in.write(data)
-                tmp_in_path = tmp_in.name
-            tmp_out_path = tmp_in_path.replace(".jpg", ".png")
-            subprocess.run(
-                ["sips", "-s", "format", "png", tmp_in_path, "--out", tmp_out_path],
-                capture_output=True, timeout=10
-            )
-            with open(tmp_out_path, "rb") as f:
-                png_data = f.read()
-            if png_data[:8] == b'\x89PNG\r\n\x1a\n':
-                return png_data
-        except Exception:
-            pass
-        finally:
-            for p in (tmp_in_path, tmp_out_path):
-                if p:
-                    try:
-                        os.unlink(p)
-                    except Exception:
-                        pass
-        return data  # fallback: return original
+        return convert_to_png(data)
 
     def _make_google_request(self, model: str, parts: List[Dict[str, Any]],
                             response_modalities: Optional[List[str]] = None) -> Dict[str, Any]:
@@ -438,22 +362,10 @@ LAYOUT:
             self._log(f"Error extracting image: {str(e)}")
             return None
 
-    def _image_to_base64(self, image_path: str) -> str:
+    @staticmethod
+    def _image_to_base64(image_path: str) -> str:
         """Convert image file to base64 data URL."""
-        with open(image_path, "rb") as f:
-            image_data = f.read()
-
-        ext = Path(image_path).suffix.lower()
-        mime_type = {
-            ".png": "image/png",
-            ".jpg": "image/jpeg",
-            ".jpeg": "image/jpeg",
-            ".gif": "image/gif",
-            ".webp": "image/webp"
-        }.get(ext, "image/png")
-
-        base64_data = base64.b64encode(image_data).decode("utf-8")
-        return f"data:{mime_type};base64,{base64_data}"
+        return image_to_base64_url(image_path)
 
     def generate_image(self, prompt: str, input_image: Optional[str] = None) -> Optional[bytes]:
         """Generate an image using Nano Banana Pro.
@@ -487,9 +399,7 @@ LAYOUT:
         if input_image:
             with open(input_image, "rb") as f:
                 img_bytes = f.read()
-            ext = Path(input_image).suffix.lower()
-            mime = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
-                    ".gif": "image/gif", ".webp": "image/webp"}.get(ext, "image/png")
+            mime = get_mime_type(input_image)
             parts.append({"inline_data": {"mime_type": mime, "data": base64.b64encode(img_bytes).decode()}})
 
         response = self._make_google_request(
@@ -552,9 +462,7 @@ LAYOUT:
         """Send review request via Google Gemini API."""
         with open(image_path, "rb") as f:
             img_bytes = f.read()
-        ext = Path(image_path).suffix.lower()
-        mime = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
-                ".gif": "image/gif", ".webp": "image/webp"}.get(ext, "image/png")
+        mime = get_mime_type(image_path)
 
         parts: List[Dict[str, Any]] = [
             {"text": review_prompt},

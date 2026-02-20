@@ -32,49 +32,13 @@ import time
 import urllib.request
 import urllib.error
 import socket
-import subprocess
-import tempfile
 from pathlib import Path
 from typing import Optional
 
-
-def check_env_file(key_name: str = "OPENROUTER_API_KEY") -> Optional[str]:
-    """Check if .env file exists and contains the given key."""
-    current_dir = Path.cwd()
-    for parent in [current_dir] + list(current_dir.parents):
-        env_file = parent / ".env"
-        if env_file.exists():
-            with open(env_file, 'r') as f:
-                for line in f:
-                    if line.startswith(f'{key_name}='):
-                        api_key = line.split('=', 1)[1].strip().strip('"').strip("'")
-                        if api_key:
-                            return api_key
-    return None
-
-
-def load_image_as_base64(image_path: str) -> str:
-    """Load an image file and return it as a base64 data URL."""
-    path = Path(image_path)
-    if not path.exists():
-        print(f"❌ Error: Image file not found: {image_path}")
-        sys.exit(1)
-
-    ext = path.suffix.lower()
-    mime_types = {
-        '.png': 'image/png',
-        '.jpg': 'image/jpeg',
-        '.jpeg': 'image/jpeg',
-        '.gif': 'image/gif',
-        '.webp': 'image/webp',
-    }
-    mime_type = mime_types.get(ext, 'image/png')
-
-    with open(path, 'rb') as f:
-        image_data = f.read()
-
-    base64_data = base64.b64encode(image_data).decode('utf-8')
-    return f"data:{mime_type};base64,{base64_data}"
+# Add skills/ to path for common imports
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+from common.image_utils import convert_to_png, get_mime_type, image_to_base64_url  # noqa: E402
+from common.env import load_env_value  # noqa: E402
 
 
 def save_base64_image(base64_data: str, output_path: str) -> None:
@@ -82,7 +46,6 @@ def save_base64_image(base64_data: str, output_path: str) -> None:
     if ',' in base64_data:
         base64_data = base64_data.split(',', 1)[1]
 
-    # Create output directory if needed
     output_dir = Path(output_path).parent
     if output_dir and not output_dir.exists():
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -92,46 +55,6 @@ def save_base64_image(base64_data: str, output_path: str) -> None:
         f.write(image_data)
 
 
-def _convert_to_png(data: bytes) -> bytes:
-    """Convert image bytes to PNG format if needed."""
-    if data[:8] == b'\x89PNG\r\n\x1a\n':
-        return data
-    try:
-        from PIL import Image
-        import io
-        img = Image.open(io.BytesIO(data))
-        buf = io.BytesIO()
-        img.save(buf, format="PNG")
-        return buf.getvalue()
-    except ImportError:
-        pass
-    tmp_in_path = None
-    tmp_out_path = None
-    try:
-        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp_in:
-            tmp_in.write(data)
-            tmp_in_path = tmp_in.name
-        tmp_out_path = tmp_in_path.replace(".jpg", ".png")
-        subprocess.run(
-            ["sips", "-s", "format", "png", tmp_in_path, "--out", tmp_out_path],
-            capture_output=True, timeout=10
-        )
-        with open(tmp_out_path, "rb") as f:
-            png_data = f.read()
-        if png_data[:8] == b'\x89PNG\r\n\x1a\n':
-            return png_data
-    except Exception:
-        pass
-    finally:
-        for p in (tmp_in_path, tmp_out_path):
-            if p:
-                try:
-                    os.unlink(p)
-                except Exception:
-                    pass
-    return data
-
-
 def calculate_aspect_ratio(width: int, height: int) -> str:
     """Calculate aspect ratio string from width and height."""
     from math import gcd
@@ -139,22 +62,14 @@ def calculate_aspect_ratio(width: int, height: int) -> str:
     w_ratio = width // divisor
     h_ratio = height // divisor
 
-    # Map to common aspect ratios for better model compatibility
     common_ratios = {
-        (1, 1): "1:1",
-        (16, 9): "16:9",
-        (9, 16): "9:16",
-        (4, 3): "4:3",
-        (3, 4): "3:4",
-        (3, 2): "3:2",
-        (2, 3): "2:3",
-        (2, 1): "2:1",
-        (1, 2): "1:2",
+        (1, 1): "1:1", (16, 9): "16:9", (9, 16): "9:16",
+        (4, 3): "4:3", (3, 4): "3:4", (3, 2): "3:2",
+        (2, 3): "2:3", (2, 1): "2:1", (1, 2): "1:2",
     }
 
     if (w_ratio, h_ratio) in common_ratios:
         return common_ratios[(w_ratio, h_ratio)]
-
     return f"{w_ratio}:{h_ratio}"
 
 
@@ -162,41 +77,46 @@ def _resolve_provider(api_key: Optional[str], provider: str) -> tuple:
     """Resolve which provider and API key to use.
 
     Returns (provider_name, api_key, model_name) tuple.
+
+    Raises:
+        ValueError: If the required API key is not found.
     """
     if provider == "google" or (provider == "auto" and not api_key):
         gemini_key = api_key if api_key and not api_key.startswith("sk-or-") else None
         if not gemini_key:
-            gemini_key = os.getenv("GEMINI_API_KEY") or check_env_file("GEMINI_API_KEY")
+            gemini_key = os.getenv("GEMINI_API_KEY") or load_env_value("GEMINI_API_KEY")
         if gemini_key:
             return ("google", gemini_key, "gemini-3-pro-image-preview")
         if provider == "google":
-            print("Error: GEMINI_API_KEY not found. Get one at: https://aistudio.google.com/apikey")
-            sys.exit(1)
+            raise ValueError("GEMINI_API_KEY not found. Get one at: https://aistudio.google.com/apikey")
 
     if provider == "openrouter" or provider == "auto":
         or_key = api_key if api_key and api_key.startswith("sk-or-") else None
         if not or_key:
-            or_key = os.getenv("OPENROUTER_API_KEY") or check_env_file("OPENROUTER_API_KEY")
+            or_key = os.getenv("OPENROUTER_API_KEY") or load_env_value("OPENROUTER_API_KEY")
         if or_key:
             return ("openrouter", or_key, "google/gemini-3-pro-image-preview")
         if provider == "openrouter":
-            print("Error: OPENROUTER_API_KEY not found. Get one at: https://openrouter.ai/keys")
-            sys.exit(1)
+            raise ValueError("OPENROUTER_API_KEY not found. Get one at: https://openrouter.ai/keys")
 
-    # Auto mode: neither key found
-    print("Error: No API key found!")
-    print("\nSet one of:")
-    print("  export GEMINI_API_KEY=your-key    (preferred, free tier)")
-    print("  export OPENROUTER_API_KEY=your-key")
-    print("\nGet a Gemini key at: https://aistudio.google.com/apikey")
-    sys.exit(1)
+    raise ValueError(
+        "No API key found!\n\n"
+        "Set one of:\n"
+        "  export GEMINI_API_KEY=your-key    (preferred, free tier)\n"
+        "  export OPENROUTER_API_KEY=your-key\n\n"
+        "Get a Gemini key at: https://aistudio.google.com/apikey"
+    )
 
 
 def _generate_via_google(
     prompt: str, api_key: str, model: str, output_path: str,
     input_image: Optional[str], timeout: int
 ) -> dict:
-    """Generate image using Google Gemini API directly."""
+    """Generate image using Google Gemini API directly.
+
+    Raises:
+        RuntimeError: On API errors, timeouts, or missing image in response.
+    """
     base_url = "https://generativelanguage.googleapis.com/v1beta"
     url = f"{base_url}/models/{model}:generateContent?key={api_key}"
 
@@ -204,9 +124,7 @@ def _generate_via_google(
     if input_image:
         with open(input_image, "rb") as f:
             img_bytes = f.read()
-        ext = Path(input_image).suffix.lower()
-        mime = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
-                ".gif": "image/gif", ".webp": "image/webp"}.get(ext, "image/png")
+        mime = get_mime_type(input_image)
         parts.append({"inline_data": {"mime_type": mime, "data": base64.b64encode(img_bytes).decode()}})
 
     payload = {
@@ -233,18 +151,14 @@ def _generate_via_google(
             error_body = e.read().decode("utf-8")
         except Exception:
             error_body = str(e)
-        print(f"API Error ({e.code}): {error_body} (after {elapsed:.1f}s)")
-        sys.exit(1)
+        raise RuntimeError(f"API Error ({e.code}): {error_body} (after {elapsed:.1f}s)")
     except urllib.error.URLError as e:
         elapsed = time.time() - t_start
         if isinstance(e.reason, socket.timeout):
-            print(f"Request timed out after {timeout}s (use --timeout to increase)")
-        else:
-            print(f"Connection error: {e.reason} (after {elapsed:.1f}s)")
-        sys.exit(1)
+            raise RuntimeError(f"Request timed out after {timeout}s (use --timeout to increase)")
+        raise RuntimeError(f"Connection error: {e.reason} (after {elapsed:.1f}s)")
     except socket.timeout:
-        print(f"Request timed out after {timeout}s (use --timeout to increase)")
-        sys.exit(1)
+        raise RuntimeError(f"Request timed out after {timeout}s (use --timeout to increase)")
     elapsed = time.time() - t_start
 
     # Extract image from Google response
@@ -255,9 +169,8 @@ def _generate_via_google(
             if "inlineData" in part and part["inlineData"].get("mimeType", "").startswith("image/"):
                 b64_data = part["inlineData"]["data"]
                 image_bytes = base64.b64decode(b64_data)
-                # Convert to PNG if output requests .png
-                if Path(output_path).suffix.lower() == ".png" and image_bytes[:8] != b'\x89PNG\r\n\x1a\n':
-                    image_bytes = _convert_to_png(image_bytes)
+                if Path(output_path).suffix.lower() == ".png":
+                    image_bytes = convert_to_png(image_bytes)
                 output_dir = Path(output_path).parent
                 if output_dir and not output_dir.exists():
                     output_dir.mkdir(parents=True, exist_ok=True)
@@ -266,92 +179,29 @@ def _generate_via_google(
                 print(f"Image saved to: {output_path} (elapsed: {elapsed:.1f}s)")
                 return result
 
-    print(f"No image found in Google response (elapsed: {elapsed:.1f}s)")
     text_parts = []
     if candidates:
         for part in candidates[0].get("content", {}).get("parts", []):
             if "text" in part:
                 text_parts.append(part["text"])
-    if text_parts:
-        print(f"Response text: {' '.join(text_parts)[:500]}...")
-
-    return result
+    extra = f"\nResponse text: {' '.join(text_parts)[:500]}..." if text_parts else ""
+    raise RuntimeError(f"No image found in Google response (elapsed: {elapsed:.1f}s){extra}")
 
 
-def generate_image(
-    prompt: str,
-    model: str = "google/gemini-3-pro-image-preview",
-    output_path: str = "generated_image.png",
-    api_key: Optional[str] = None,
-    input_image: Optional[str] = None,
-    width: Optional[int] = None,
-    height: Optional[int] = None,
-    timeout: int = 120,
-    provider: str = "auto"
+def _generate_via_openrouter(
+    prompt: str, api_key: str, model: str, output_path: str,
+    input_image: Optional[str], width: Optional[int], height: Optional[int],
+    timeout: int
 ) -> dict:
+    """Generate image using OpenRouter API.
+
+    Raises:
+        RuntimeError: On API errors, timeouts, or missing image in response.
     """
-    Generate or edit an image using Google Gemini API (preferred) or OpenRouter.
-
-    Uses Python stdlib only - no external dependencies required.
-
-    Args:
-        prompt: Text description of the image to generate, or editing instructions
-        model: Model ID (auto-mapped based on provider)
-        output_path: Path to save the generated image
-        api_key: API key (will auto-detect from environment if not provided)
-        input_image: Path to an input image for editing (optional)
-        width: Target image width in pixels (optional)
-        height: Target image height in pixels (optional)
-        timeout: Request timeout in seconds (default: 120)
-        provider: API provider - "auto" (prefer Google), "google", or "openrouter"
-
-    Returns:
-        dict: Response from API
-    """
-    resolved_provider, resolved_key, default_model = _resolve_provider(api_key, provider)
-
-    # Use provided model for OpenRouter, map for Google
-    if resolved_provider == "google":
-        # Strip google/ prefix if user passed OpenRouter-style model name
-        if model.startswith("google/"):
-            model = model.split("/", 1)[1]
-        # For non-Google models with Google provider, use default
-        if not model.startswith("gemini"):
-            model = default_model
-
     is_editing = input_image is not None
 
-    print(f"\n{'='*50}")
-    print(f"Nano Banana - {'Editing' if is_editing else 'Generating'} Image")
-    print(f"{'='*50}")
-
     if is_editing:
-        print(f"Input: {input_image}")
-        print(f"Edit: {prompt}")
-    else:
-        print(f"Prompt: {prompt}")
-
-    print(f"Provider: {resolved_provider}")
-    print(f"Model: {model}")
-    print(f"Output: {output_path}")
-
-    if width and height:
-        aspect_ratio = calculate_aspect_ratio(width, height)
-        print(f"Dimensions: {width}x{height} (aspect ratio: {aspect_ratio})")
-
-    print(f"Timeout: {timeout}s")
-    print(f"{'='*50}\n")
-
-    # Route to Google direct API
-    if resolved_provider == "google":
-        return _generate_via_google(
-            prompt=prompt, api_key=resolved_key, model=model,
-            output_path=output_path, input_image=input_image, timeout=timeout
-        )
-
-    # OpenRouter path
-    if is_editing:
-        image_data_url = load_image_as_base64(input_image)
+        image_data_url = image_to_base64_url(input_image)
         message_content = [
             {"type": "text", "text": prompt},
             {"type": "image_url", "image_url": {"url": image_data_url}}
@@ -361,7 +211,7 @@ def generate_image(
 
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
-        "Authorization": f"Bearer {resolved_key}",
+        "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
         "HTTP-Referer": "https://github.com/flight505/nano-banana",
         "X-Title": "Nano Banana Image Generator"
@@ -399,18 +249,14 @@ def generate_image(
             error_body = e.read().decode("utf-8")
         except Exception:
             error_body = str(e)
-        print(f"API Error ({e.code}): {error_body} (after {elapsed:.1f}s)")
-        sys.exit(1)
+        raise RuntimeError(f"API Error ({e.code}): {error_body} (after {elapsed:.1f}s)")
     except urllib.error.URLError as e:
         elapsed = time.time() - t_start
         if isinstance(e.reason, socket.timeout):
-            print(f"Request timed out after {timeout}s (use --timeout to increase)")
-        else:
-            print(f"Connection error: {e.reason} (after {elapsed:.1f}s)")
-        sys.exit(1)
+            raise RuntimeError(f"Request timed out after {timeout}s (use --timeout to increase)")
+        raise RuntimeError(f"Connection error: {e.reason} (after {elapsed:.1f}s)")
     except socket.timeout:
-        print(f"Request timed out after {timeout}s (use --timeout to increase)")
-        sys.exit(1)
+        raise RuntimeError(f"Request timed out after {timeout}s (use --timeout to increase)")
     elapsed = time.time() - t_start
 
     if result.get("choices"):
@@ -429,8 +275,7 @@ def generate_image(
         if images:
             image = images[0]
             if "image_url" in image:
-                image_url = image["image_url"]["url"]
-                save_base64_image(image_url, output_path)
+                save_base64_image(image["image_url"]["url"], output_path)
                 print(f"Image saved to: {output_path} (elapsed: {elapsed:.1f}s)")
             elif "url" in image:
                 save_base64_image(image["url"], output_path)
@@ -446,6 +291,90 @@ def generate_image(
         print(f"Response: {json.dumps(result, indent=2)}")
 
     return result
+
+
+def generate_image(
+    prompt: str,
+    model: str = "google/gemini-3-pro-image-preview",
+    output_path: str = "generated_image.png",
+    api_key: Optional[str] = None,
+    input_image: Optional[str] = None,
+    width: Optional[int] = None,
+    height: Optional[int] = None,
+    timeout: int = 120,
+    provider: str = "auto"
+) -> dict:
+    """
+    Generate or edit an image using Google Gemini API (preferred) or OpenRouter.
+
+    Uses Python stdlib only - no external dependencies required.
+
+    Args:
+        prompt: Text description of the image to generate, or editing instructions
+        model: Model ID (auto-mapped based on provider)
+        output_path: Path to save the generated image
+        api_key: API key (will auto-detect from environment if not provided)
+        input_image: Path to an input image for editing (optional)
+        width: Target image width in pixels (optional)
+        height: Target image height in pixels (optional)
+        timeout: Request timeout in seconds (default: 120)
+        provider: API provider - "auto" (prefer Google), "google", or "openrouter"
+
+    Returns:
+        dict: Response from API
+
+    Raises:
+        ValueError: If no API key is found.
+        FileNotFoundError: If the input image does not exist.
+        RuntimeError: On API errors, timeouts, or missing image in response.
+    """
+    resolved_provider, resolved_key, default_model = _resolve_provider(api_key, provider)
+
+    # Map model for Google provider
+    if resolved_provider == "google":
+        if model.startswith("google/"):
+            model = model.split("/", 1)[1]
+        if not model.startswith("gemini"):
+            model = default_model
+
+    # Validate input image exists
+    if input_image and not Path(input_image).exists():
+        raise FileNotFoundError(f"Input image not found: {input_image}")
+
+    is_editing = input_image is not None
+
+    print(f"\n{'='*50}")
+    print(f"Nano Banana - {'Editing' if is_editing else 'Generating'} Image")
+    print(f"{'='*50}")
+
+    if is_editing:
+        print(f"Input: {input_image}")
+        print(f"Edit: {prompt}")
+    else:
+        print(f"Prompt: {prompt}")
+
+    print(f"Provider: {resolved_provider}")
+    print(f"Model: {model}")
+    print(f"Output: {output_path}")
+
+    if width and height:
+        aspect_ratio = calculate_aspect_ratio(width, height)
+        print(f"Dimensions: {width}x{height} (aspect ratio: {aspect_ratio})")
+
+    print(f"Timeout: {timeout}s")
+    print(f"{'='*50}\n")
+
+    if resolved_provider == "google":
+        return _generate_via_google(
+            prompt=prompt, api_key=resolved_key, model=model,
+            output_path=output_path, input_image=input_image, timeout=timeout
+        )
+
+    return _generate_via_openrouter(
+        prompt=prompt, api_key=resolved_key, model=model,
+        output_path=output_path, input_image=input_image,
+        width=width, height=height, timeout=timeout
+    )
 
 
 def main():
@@ -516,17 +445,21 @@ Environment:
     if args.height and args.height < 1:
         parser.error("Height must be positive")
 
-    generate_image(
-        prompt=args.prompt,
-        model=args.model,
-        output_path=args.output,
-        api_key=args.api_key,
-        input_image=args.input,
-        width=args.width,
-        height=args.height,
-        timeout=args.timeout,
-        provider=args.provider
-    )
+    try:
+        generate_image(
+            prompt=args.prompt,
+            model=args.model,
+            output_path=args.output,
+            api_key=args.api_key,
+            input_image=args.input,
+            width=args.width,
+            height=args.height,
+            timeout=args.timeout,
+            provider=args.provider
+        )
+    except (ValueError, FileNotFoundError, RuntimeError) as e:
+        print(f"\n✗ Error: {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

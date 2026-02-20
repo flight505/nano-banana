@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.0] - 2026-02-20
+
+### ✨ Added
+
+- **Google Gemini API Direct Support** - Preferred provider with free tier, no proxy layer
+- **Provider Auto-Detection** - Prefers `GEMINI_API_KEY`, falls back to `OPENROUTER_API_KEY`
+- **`--provider` Flag** - Force `google` or `openrouter` on all scripts
+- **Shared Utilities** - `skills/common/image_utils.py` and `skills/common/env.py` eliminate code duplication
+
+### 🔄 Changed
+
+- **Error Handling** - `generate_image.py` raises exceptions instead of calling `sys.exit()` (now importable as a library)
+- **JPEG-to-PNG Conversion** - Automatic conversion when Google API returns JPEG for `.png` output
+- **Env Loading** - Unified stdlib-only `.env` file loading (no `python-dotenv` needed)
+
+### 🗑️ Removed
+
+- **`http_client.py`** - Unused `OpenRouterClient` class deleted
+- Dead `_is_png` method, unreachable code branches
+
+### 🔧 Fixed
+
+- `generate_diagram.py` wrapper now supports `GEMINI_API_KEY` (was hardcoded to OpenRouter only)
+- Temp file leaks in `_convert_to_png` (proper `finally` cleanup)
+- Wasted base64 encoding in `review_image()` for Google provider
+
+### 📝 Documentation
+
+- Updated SKILL.md files to reflect Google API as preferred provider
+- Updated `setup.md` with dual-provider instructions
+- Synced all version references to 1.3.0
+
+---
+
 ## [1.0.3] - 2025-01-08
 
 ### 🔄 Changed

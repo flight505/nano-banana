@@ -3,7 +3,7 @@
 ## Ground Truth Documentation
 
 **Plugin:** Nano Banana
-**Version:** 1.1.0
+**Version:** 1.3.0
 **Purpose:** AI-powered image and diagram generation for Claude Code
 **Repository:** https://github.com/flight505/nano-banana
 **Author:** flight505 (Jesper Vang)

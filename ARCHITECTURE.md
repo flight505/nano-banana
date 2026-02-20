@@ -1,6 +1,6 @@
 # Nano Banana — Architecture
 
-**Version:** 1.3.0
+**Version:** 1.3.1
 **Repository:** https://github.com/flight505/nano-banana
 **Author:** flight505 (Jesper Vang)
 
@@ -155,7 +155,7 @@ These replace previously duplicated code across `generate_diagram_ai.py` and `ge
 ```
 nano-banana/
 ├── .claude-plugin/
-│   └── plugin.json                  # Plugin manifest (v1.3.0)
+│   └── plugin.json                  # Plugin manifest
 ├── .github/workflows/
 │   └── notify-marketplace.yml       # Webhook to marketplace on version bump
 ├── assets/
@@ -205,7 +205,13 @@ For diagram generation with output path `diagram.png`:
 
 ## Version History
 
-### v1.3.0 (2026-02-20) — Current
+### v1.3.1 (2026-02-20) — Current
+
+- Documentation consolidation (ARCHITECTURE.md replaces CONTEXT_nano-banana.md)
+- Removed stale docs/plans/ implementation plans
+- Updated CLAUDE.md and README.md for v1.3.0 changes
+
+### v1.3.0 (2026-02-20)
 
 - **Google Gemini API direct support** — preferred provider with free tier
 - **Provider auto-detection** — `GEMINI_API_KEY` preferred, `OPENROUTER_API_KEY` fallback

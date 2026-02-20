@@ -4,14 +4,28 @@ AI-powered image and diagram generation for Claude Code using Google Gemini API 
 
 ## Version Management & Marketplace Sync
 
-**When committing version changes to `.claude-plugin/plugin.json`:**
+**Files to update on every version bump:**
 
-1. **Bump version** following semantic versioning (MAJOR.MINOR.PATCH)
+| File | What to change |
+|------|---------------|
+| `.claude-plugin/plugin.json` | `"version"` field |
+| `pyproject.toml` | `version =` field |
+| `README.md` | Version badge (`version-X.Y.Z-blue`) |
+| `ARCHITECTURE.md` | `**Version:**` header + version history |
+| `CHANGELOG.md` | Add new entry (for meaningful releases) |
+
+**Workflow:**
+
+1. Update all files above
 2. **Commit & push** to trigger webhook: `git commit -m "chore: bump version to X.Y.Z" && git push`
 3. **Verify webhook** fired (5 sec): `gh run list --repo flight505/nano-banana --limit 1`
 4. **Marketplace auto-syncs** within 30 seconds — no manual `marketplace.json` update needed
 
-**Tip**: Use `../../scripts/bump-plugin-version.sh nano-banana X.Y.Z` to automate everything.
+**Tip**: The bump script handles `plugin.json` and `README.md` badge only. You must manually update `pyproject.toml`, `ARCHITECTURE.md`, and `CHANGELOG.md`.
+
+```bash
+../../scripts/bump-plugin-version.sh nano-banana X.Y.Z
+```
 
 ---
 

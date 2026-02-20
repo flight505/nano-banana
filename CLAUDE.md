@@ -1,17 +1,15 @@
 # Nano Banana - Claude Code Plugin Instructions
 
-This is a Claude Code plugin for AI-powered image and diagram generation.
+AI-powered image and diagram generation for Claude Code using Google Gemini API (preferred) or OpenRouter.
 
 ## Version Management & Marketplace Sync
 
-**⚠️ CRITICAL: When committing version changes to `.claude-plugin/plugin.json`:**
+**When committing version changes to `.claude-plugin/plugin.json`:**
 
 1. **Bump version** following semantic versioning (MAJOR.MINOR.PATCH)
 2. **Commit & push** to trigger webhook: `git commit -m "chore: bump version to X.Y.Z" && git push`
 3. **Verify webhook** fired (5 sec): `gh run list --repo flight505/nano-banana --limit 1`
-   - Success: "✅ Marketplace notification sent successfully (HTTP 204)"
-   - Failed: See `../../docs/WEBHOOK-TROUBLESHOOTING.md`
-4. **Marketplace auto-syncs** within 30 seconds - no manual `marketplace.json` update needed
+4. **Marketplace auto-syncs** within 30 seconds — no manual `marketplace.json` update needed
 
 **Tip**: Use `../../scripts/bump-plugin-version.sh nano-banana X.Y.Z` to automate everything.
 
@@ -22,12 +20,13 @@ This is a Claude Code plugin for AI-powered image and diagram generation.
 | Command | Description |
 |---------|-------------|
 | `/nano-banana:setup` | Configure API keys and environment |
+| `/nano-banana:edit` | Edit an existing image or diagram with AI |
 
 ## Skills
 
 | Skill | Description |
 |-------|-------------|
-| `diagram` | Generate technical diagrams with AI quality review |
+| `diagram` | Generate technical diagrams with AI quality review and smart iteration |
 | `image` | Generate and edit images using AI models |
 | `mermaid` | Create text-based diagrams with Mermaid syntax |
 
@@ -47,16 +46,30 @@ python3 skills/diagram/scripts/generate_diagram.py "description" -o output.png -
 python3 skills/image/scripts/generate_image.py "description" -o output.png
 ```
 
-### Edit an Image
+### Edit an Image or Diagram
 
 ```bash
 python3 skills/image/scripts/generate_image.py "edit instructions" --input source.png -o output.png
+python3 skills/diagram/scripts/generate_diagram_ai.py "edit instructions" --input source.png -o output.png --doc-type architecture
+```
+
+### Force a Specific Provider
+
+```bash
+python3 skills/image/scripts/generate_image.py "description" -o output.png --provider google
+python3 skills/diagram/scripts/generate_diagram.py "description" -o output.png --provider openrouter
 ```
 
 ## Requirements
 
-- `OPENROUTER_API_KEY` environment variable
-- Python 3.8+ with `requests` library
+- **GEMINI_API_KEY** (preferred) or **OPENROUTER_API_KEY** environment variable
+- Python 3.8+ (stdlib only — no external dependencies)
+
+## Provider Auto-Detection
+
+1. If `GEMINI_API_KEY` is set → uses Google Gemini API directly (free tier, most reliable)
+2. If only `OPENROUTER_API_KEY` is set → falls back to OpenRouter (supports FLUX and other non-Google models)
+3. Use `--provider google` or `--provider openrouter` to override
 
 ## When to Use Which Skill
 
@@ -66,6 +79,8 @@ python3 skills/image/scripts/generate_image.py "edit instructions" --input sourc
 
 ## Key Principles
 
-1. **Smart iteration** - diagram skill only regenerates if quality below threshold
-2. **Document-type aware** - different quality standards for different outputs
-3. **AI review** - Gemini 3 Pro reviews each diagram generation
+1. **Zero dependencies** — uses Python stdlib only (`urllib.request`), no PEP 668 issues
+2. **Smart iteration** — diagram skill only regenerates if quality below threshold
+3. **Document-type aware** — 13 quality presets for different output contexts
+4. **AI review** — Gemini 3 Pro reviews each diagram generation
+5. **Shared utilities** — `skills/common/` provides reusable image and env helpers

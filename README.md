@@ -10,26 +10,25 @@
 
 <p align="center">
   <strong>AI-powered image and diagram generation for Claude Code</strong><br>
-  Using Nano Banana Pro (Gemini 3 Pro Image) with intelligent quality review
+  Using Google Gemini API (preferred) or OpenRouter with intelligent quality review
 </p>
 
 ---
 
-## ✨ Features
+## Features
 
-- 🚫 **Zero Dependencies** - Uses Python stdlib only, works everywhere (no PEP 668 issues!)
-- 🎯 **Smart Iteration** - Only regenerates when quality is below threshold (saves API calls)
-- 📊 **Document-Type Aware** - 13 quality presets (journal, architecture, presentation, etc.)
-- 🔍 **AI Quality Review** - Gemini 3 Pro reviews each generation
-- 🎨 **Multiple Skills** - Technical diagrams, general images, and Mermaid text diagrams
-- ✏️ **Image Editing** - Modify existing images with natural language
-- 📝 **Version Control** - Mermaid diagrams are text-based and git-friendly
+- **Zero Dependencies** - Uses Python stdlib only, works everywhere (no PEP 668 issues!)
+- **Dual Provider** - Google Gemini API (free tier) with OpenRouter fallback
+- **Smart Iteration** - Only regenerates when quality is below threshold (saves API calls)
+- **Document-Type Aware** - 13 quality presets (journal, architecture, presentation, etc.)
+- **AI Quality Review** - Gemini 3 Pro reviews each diagram generation
+- **Multiple Skills** - Technical diagrams, general images, and Mermaid text diagrams
+- **Image Editing** - Modify existing images with natural language
+- **Version Control** - Mermaid diagrams are text-based and git-friendly
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Install the Plugin
-
-Clone or download to your Claude Code plugins directory:
 
 ```bash
 git clone https://github.com/flight505/nano-banana.git
@@ -37,14 +36,26 @@ git clone https://github.com/flight505/nano-banana.git
 
 ### 2. Configure API Key
 
-Get an API key from [OpenRouter](https://openrouter.ai/keys), then:
+**Option A: Google Gemini API (Recommended — free tier available)**
+
+Get a key at [Google AI Studio](https://aistudio.google.com/apikey):
 
 ```bash
-# Option A: Environment variable
-export OPENROUTER_API_KEY='sk-or-v1-your-key-here'
+export GEMINI_API_KEY='your-gemini-key-here'
+```
 
-# Option B: .env file in your project
-echo "OPENROUTER_API_KEY=sk-or-v1-your-key-here" > .env
+**Option B: OpenRouter (for FLUX and other non-Google models)**
+
+Get a key at [OpenRouter](https://openrouter.ai/keys):
+
+```bash
+export OPENROUTER_API_KEY='sk-or-v1-your-key-here'
+```
+
+Or use a `.env` file in your project:
+
+```bash
+echo "GEMINI_API_KEY=your-key-here" > .env
 ```
 
 ### 3. Generate!
@@ -60,11 +71,16 @@ python3 skills/diagram/scripts/generate_diagram.py \
 python3 skills/image/scripts/generate_image.py \
     "A cozy coffee shop on a rainy day" \
     -o coffee_shop.png
+
+# Edit an existing image
+python3 skills/image/scripts/generate_image.py \
+    "Add rain to the window" \
+    --input coffee_shop.png -o rainy_coffee_shop.png
 ```
 
-## 📦 Skills
+## Skills
 
-### 🔷 Diagram Skill
+### Diagram Skill
 
 Generate publication-quality technical diagrams with AI quality review.
 
@@ -81,9 +97,9 @@ python3 skills/diagram/scripts/generate_diagram.py "User authentication flow" -o
 | `presentation` | 6.5/10 | Slides (faster) |
 | `readme` | 7.0/10 | Documentation |
 
-[📖 Full Diagram Documentation](skills/diagram/SKILL.md)
+[Full Diagram Documentation](skills/diagram/SKILL.md)
 
-### 🎨 Image Skill
+### Image Skill
 
 Generate and edit images using various AI models.
 
@@ -97,12 +113,12 @@ python3 skills/image/scripts/generate_image.py "Make the sky purple" --input pho
 
 **Available Models:**
 - `google/gemini-3-pro-image-preview` (default)
-- `black-forest-labs/flux.2-pro`
-- `black-forest-labs/flux.2-flex`
+- `black-forest-labs/flux.2-pro` (via OpenRouter)
+- `black-forest-labs/flux.2-flex` (via OpenRouter)
 
-[📖 Full Image Documentation](skills/image/SKILL.md)
+[Full Image Documentation](skills/image/SKILL.md)
 
-### 📝 Mermaid Skill
+### Mermaid Skill
 
 Create text-based diagrams that render in GitHub, GitLab, and documentation.
 
@@ -113,9 +129,9 @@ flowchart LR
 ```
 ```
 
-[📖 Full Mermaid Documentation](skills/mermaid/SKILL.md)
+[Full Mermaid Documentation](skills/mermaid/SKILL.md)
 
-## 🎯 When to Use Which Skill
+## When to Use Which Skill
 
 | Need | Use |
 |------|-----|
@@ -127,62 +143,68 @@ flowchart LR
 | Version-controlled diagrams | `mermaid` |
 | GitHub README diagrams | `mermaid` |
 
-## ⚙️ Configuration
+## Configuration
 
 ### Environment Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `OPENROUTER_API_KEY` | Yes | OpenRouter API key |
+| `GEMINI_API_KEY` | Preferred | Google Gemini API key (free tier, direct, most reliable) |
+| `OPENROUTER_API_KEY` | Alternative | OpenRouter API key (supports FLUX and non-Google models) |
+
+**Auto-detection:** When both keys are set, Google Gemini is preferred. Use `--provider openrouter` to force OpenRouter.
 
 ### Setup Command
 
 Run `/nano-banana:setup` in Claude Code for interactive configuration.
 
-## 💰 Cost Estimates
+## Cost Estimates
 
 | Operation | Estimated Cost |
 |-----------|---------------|
 | Simple diagram (1 iteration) | $0.05-0.15 |
 | Complex diagram (2 iterations) | $0.10-0.30 |
-| Image generation | $0.02-0.10 |
+| Image generation (Gemini) | Free tier / ~$0.02-0.10 |
+| Image generation (FLUX) | $0.05-0.20 |
 
 Smart iteration saves costs by stopping early when quality meets threshold.
 
-## 📁 Plugin Structure
+## Plugin Structure
 
 ```
 nano-banana/
 ├── .claude-plugin/
-│   ├── plugin.json          # Plugin manifest
-│   └── marketplace.json     # Marketplace metadata
-├── skills/
-│   ├── diagram/             # Technical diagram generation
-│   │   ├── SKILL.md
-│   │   └── scripts/
-│   ├── image/               # General image generation
-│   │   ├── SKILL.md
-│   │   └── scripts/
-│   └── mermaid/             # Text-based diagrams
-│       └── SKILL.md
+│   └── plugin.json              # Plugin manifest
 ├── commands/
-│   └── setup.md             # /nano-banana:setup command
-├── pyproject.toml           # Python packaging (uv/pip)
-├── requirements.txt         # Dependencies
+│   ├── edit.md                  # /nano-banana:edit command
+│   └── setup.md                 # /nano-banana:setup command
+├── hooks/
+│   ├── hooks.json               # PostToolUse hook declarations
+│   └── validate-output.py       # Output validation + error recovery
+├── skills/
+│   ├── common/                  # Shared utilities
+│   │   ├── __init__.py
+│   │   ├── env.py               # Unified .env file loading (stdlib)
+│   │   └── image_utils.py       # PNG conversion, MIME types, base64
+│   ├── diagram/                 # Technical diagram generation
+│   │   ├── SKILL.md
+│   │   └── scripts/
+│   │       ├── generate_diagram.py      # CLI wrapper
+│   │       └── generate_diagram_ai.py   # AI generation + review logic
+│   ├── image/                   # General image generation
+│   │   ├── SKILL.md
+│   │   └── scripts/
+│   │       └── generate_image.py        # Image generation/editing
+│   └── mermaid/                 # Text-based diagrams
+│       └── SKILL.md
+├── ARCHITECTURE.md              # Technical architecture documentation
+├── CHANGELOG.md                 # Version history
+├── CLAUDE.md                    # Developer instructions
+├── pyproject.toml               # Python packaging (uv/pip)
 └── README.md
 ```
 
-## 🛠️ Development
-
-### Install Development Dependencies
-
-```bash
-# With uv
-uv pip install -e ".[dev]"
-
-# With pip
-pip install -e ".[dev]"
-```
+## Development
 
 ### Run Tests
 
@@ -197,22 +219,22 @@ ruff check .
 ruff format .
 ```
 
-## 📜 License
+## License
 
 MIT License - see [LICENSE](LICENSE) for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
-- [OpenRouter](https://openrouter.ai) for API access to AI models
-- [Gemini](https://deepmind.google/technologies/gemini/) for Nano Banana Pro image generation
+- [Google Gemini](https://deepmind.google/technologies/gemini/) for direct image generation API
+- [OpenRouter](https://openrouter.ai) for multi-model API access
 - [Claude Code](https://github.com/anthropics/claude-code) for the plugin platform
 - Inspired by the [Claude Project Planner](https://github.com/flight505/claude-project-planner) plugin
 
-## 🐛 Issues & Contributions
+## Issues & Contributions
 
 - Report issues: [GitHub Issues](https://github.com/flight505/nano-banana/issues)
 - Contributions welcome via Pull Requests
 
 ---
 
-**Made with 🍌 by [flight505](https://github.com/flight505)**
+**Made with Nano Banana by [flight505](https://github.com/flight505)**

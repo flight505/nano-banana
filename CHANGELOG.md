@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.2] - 2026-02-24
+
+### 🐛 Fixed
+
+- **OpenRouter 401 with explicit `--provider openrouter`** - Diagram wrapper passed GEMINI_API_KEY to OpenRouter when both keys were set
+- **OpenRouter images saved as JPEG** - `save_base64_image()` now converts to PNG when output path is `.png`
+- **API key routing hardened** - `generate_diagram_ai.py` rejects non-`sk-or-` keys for OpenRouter branch
+
+---
+
 ## [1.3.0] - 2026-02-20
 
 ### ✨ Added

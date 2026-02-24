@@ -1,6 +1,6 @@
 # Nano Banana — Architecture
 
-**Version:** 1.3.1
+**Version:** 1.3.2
 **Repository:** https://github.com/flight505/nano-banana
 **Author:** flight505 (Jesper Vang)
 
@@ -205,7 +205,13 @@ For diagram generation with output path `diagram.png`:
 
 ## Version History
 
-### v1.3.1 (2026-02-20) — Current
+### v1.3.2 (2026-02-24) — Current
+
+- Fix OpenRouter 401 when `--provider openrouter` with both API keys set
+- Fix OpenRouter images saved as JPEG instead of PNG
+- Correct API key routing per explicit `--provider` flag
+
+### v1.3.1 (2026-02-20)
 
 - Documentation consolidation (ARCHITECTURE.md replaces CONTEXT_nano-banana.md)
 - Removed stale docs/plans/ implementation plans

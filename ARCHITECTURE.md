@@ -37,7 +37,7 @@ Override with `--provider google` or `--provider openrouter`.
 - **Image input:** `inlineData.mimeType` + `inlineData.data` (base64)
 - **Response parsing:** `candidates[0].content.parts[]` — find `inlineData` for image, `text` for text
 - **Models:** `gemini-3-pro-image-preview` (generation), `gemini-3-pro-preview` (review)
-- **JPEG handling:** Google API may return JPEG for `.png` requests — auto-converted via `convert_to_png()`
+- **JPEG handling:** API may return JPEG for `.png` requests — auto-converted via `convert_to_png()`
 
 ### OpenRouter (Fallback)
 
@@ -45,6 +45,7 @@ Override with `--provider google` or `--provider openrouter`.
 - **Image generation:** `modalities: ["text", "image"]`
 - **Image input:** `image_url.url` (data URI)
 - **Response parsing:** `choices[0].message.content[]` — find `image_url` for image
+- **JPEG handling:** Same as Google — `save_base64_image()` converts to PNG when output is `.png`
 - **Models:** `google/gemini-3-pro-image-preview`, `black-forest-labs/flux.2-pro`, `black-forest-labs/flux.2-flex`
 
 ---
@@ -277,5 +278,4 @@ marketplace.json updated + submodule pointer advanced
 
 ---
 
-**Document Version:** 3.0.0
-**Last Updated:** 2026-02-20
+**Last Updated:** 2026-02-24

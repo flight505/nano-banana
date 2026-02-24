@@ -204,21 +204,6 @@ nano-banana/
 └── README.md
 ```
 
-## Development
-
-### Run Tests
-
-```bash
-pytest
-```
-
-### Lint
-
-```bash
-ruff check .
-ruff format .
-```
-
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.

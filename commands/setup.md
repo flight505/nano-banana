@@ -101,17 +101,16 @@ If successful, you'll see the provider being used and the saved output path.
 
 **Provider auto-detection:** When both keys are set, Nano Banana prefers the Google direct API. Use `--provider openrouter` to force OpenRouter.
 
-## Optional: .env File Support
+## .env File Support
 
-If you want to use `.env` files, install python-dotenv:
+Nano Banana reads `.env` files automatically (stdlib-only, no `python-dotenv` needed). Just create a `.env` in your project root:
 
 ```bash
-pip install python-dotenv
-# or
-uv pip install python-dotenv
+echo "GEMINI_API_KEY=your-key-here" > .env
+echo ".env" >> .gitignore
 ```
 
-This is **optional** - you can also just use exported environment variables.
+The plugin searches for `.env` files in the current directory and up to 5 parent directories.
 
 ## Troubleshooting
 

@@ -51,6 +51,8 @@ def save_base64_image(base64_data: str, output_path: str) -> None:
         output_dir.mkdir(parents=True, exist_ok=True)
 
     image_data = base64.b64decode(base64_data)
+    if output_path.lower().endswith('.png'):
+        image_data = convert_to_png(image_data)
     with open(output_path, 'wb') as f:
         f.write(image_data)
 

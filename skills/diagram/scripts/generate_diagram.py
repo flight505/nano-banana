@@ -67,7 +67,8 @@ Examples:
   python generate_diagram.py "ERD diagram" -o erd.png -v
 
 Environment Variables:
-  OPENROUTER_API_KEY    Required for AI generation
+  GEMINI_API_KEY        Preferred (free tier, direct)
+  OPENROUTER_API_KEY    Alternative (multi-model)
         """
     )
 
@@ -96,8 +97,13 @@ Environment Variables:
 
     args = parser.parse_args()
 
-    # Check for API key (prefer GEMINI_API_KEY, fall back to OPENROUTER_API_KEY)
-    api_key = args.api_key or os.getenv("GEMINI_API_KEY") or os.getenv("OPENROUTER_API_KEY")
+    # Check for API key — respect provider choice
+    if args.provider == "openrouter":
+        api_key = args.api_key or os.getenv("OPENROUTER_API_KEY")
+    elif args.provider == "google":
+        api_key = args.api_key or os.getenv("GEMINI_API_KEY")
+    else:  # auto
+        api_key = args.api_key or os.getenv("GEMINI_API_KEY") or os.getenv("OPENROUTER_API_KEY")
     if not api_key:
         print("Error: No API key found")
         print("\nSet one of these environment variables:")

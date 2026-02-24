@@ -148,7 +148,8 @@ LAYOUT:
                 )
         else:  # openrouter
             self.provider = "openrouter"
-            self.api_key = api_key or os.getenv("OPENROUTER_API_KEY") or load_env_value("OPENROUTER_API_KEY")
+            or_key = api_key if api_key and api_key.startswith("sk-or-") else None
+            self.api_key = or_key or os.getenv("OPENROUTER_API_KEY") or load_env_value("OPENROUTER_API_KEY")
             if not self.api_key:
                 raise ValueError(
                     "OPENROUTER_API_KEY not found. Get one at: https://openrouter.ai/keys"

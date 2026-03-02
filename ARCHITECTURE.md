@@ -1,6 +1,6 @@
 # Nano Banana — Architecture
 
-**Version:** 1.3.2
+**Version:** 2.0.0
 **Repository:** https://github.com/flight505/nano-banana
 **Author:** flight505 (Jesper Vang)
 
@@ -18,6 +18,14 @@
 
 ## Provider Architecture
 
+### Model Hierarchy
+
+| Name | Model ID | Speed | Use Case |
+|------|----------|-------|----------|
+| **Nano Banana 2** | `gemini-3.1-flash-image-preview` | Flash (fastest) | High-volume, general use (image skill default) |
+| **Nano Banana Pro** | `gemini-3-pro-image-preview` | Pro | Professional assets, best quality (diagram skill default) |
+| **Nano Banana** (legacy) | `gemini-2.5-flash-image` | GA stable | Older, maintained until Oct 2026 |
+
 ### Provider Auto-Detection
 
 ```
@@ -34,9 +42,12 @@ Override with `--provider google` or `--provider openrouter`.
 
 - **Endpoint:** `https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}`
 - **Image generation:** `generationConfig.responseModalities: ["TEXT", "IMAGE"]`
+- **Image config:** `generationConfig.imageConfig: { aspectRatio, imageSize }`
+- **Aspect ratios:** 1:1, 1:4, 1:8, 2:3, 3:2, 3:4, 4:1, 4:3, 4:5, 5:4, 8:1, 9:16, 16:9, 21:9
+- **Image sizes:** 512px, 1K, 2K, 4K
 - **Image input:** `inlineData.mimeType` + `inlineData.data` (base64)
 - **Response parsing:** `candidates[0].content.parts[]` — find `inlineData` for image, `text` for text
-- **Models:** `gemini-3-pro-image-preview` (generation), `gemini-3-pro-preview` (review)
+- **Models:** `gemini-3.1-flash-image-preview` (image default), `gemini-3-pro-image-preview` (diagram default), `gemini-3-pro-preview` (review)
 - **JPEG handling:** API may return JPEG for `.png` requests — auto-converted via `convert_to_png()`
 
 ### OpenRouter (Fallback)
@@ -46,7 +57,7 @@ Override with `--provider google` or `--provider openrouter`.
 - **Image input:** `image_url.url` (data URI)
 - **Response parsing:** `choices[0].message.content[]` — find `image_url` for image
 - **JPEG handling:** Same as Google — `save_base64_image()` converts to PNG when output is `.png`
-- **Models:** `google/gemini-3-pro-image-preview`, `black-forest-labs/flux.2-pro`, `black-forest-labs/flux.2-flex`
+- **Models:** `google/gemini-3.1-flash-image-preview`, `google/gemini-3-pro-image-preview`, `black-forest-labs/flux.2-pro`, `black-forest-labs/flux.2-flex`
 
 ---
 
@@ -54,9 +65,9 @@ Override with `--provider google` or `--provider openrouter`.
 
 ```
 skills/
-├── diagram/     → Technical diagrams with AI quality review + iteration
+├── diagram/     → AI-generated technical diagrams with quality review + iteration
 ├── image/       → General image generation and editing
-└── mermaid/     → Text-based diagrams (version-control friendly)
+└── kroki/       → Render text-based diagrams (27 types) to PNG/SVG via Kroki.io
 ```
 
 ### Diagram Skill — Smart Iteration
@@ -96,11 +107,16 @@ Score < threshold? → Build improved prompt from critique → Regenerate (max 2
 - Supports generation and editing via `--input` flag
 - Importable as library — functions raise exceptions (`ValueError`, `RuntimeError`, `FileNotFoundError`), only `main()` calls `sys.exit()`
 
-### Mermaid Skill
+### Kroki Skill
 
-- Text-based diagrams rendered by GitHub, GitLab, Obsidian
-- No API calls — pure markdown output
-- 8 diagram types: flowchart, sequence, class, ERD, state, Gantt, pie, git graph
+**Core logic:** `skills/kroki/scripts/render_diagram.py`
+
+- Renders text-based diagram source (Mermaid, PlantUML, GraphViz, D2, etc.) to PNG/SVG/PDF via [Kroki.io](https://kroki.io)
+- 27 diagram types supported (see `--list-types`)
+- POST request with JSON body: `{"diagram_source": "...", "diagram_type": "mermaid", "output_format": "png"}`
+- Reads from file (`--input`), inline (`--source`), or stdin
+- Supports self-hosted Kroki via `--server`
+- Only triggers when user explicitly asks for text-based diagram rendering
 
 ---
 
@@ -181,8 +197,10 @@ nano-banana/
 │   │   ├── SKILL.md                 # Image skill documentation
 │   │   └── scripts/
 │   │       └── generate_image.py        # Image generation/editing
-│   └── mermaid/
-│       └── SKILL.md                 # Mermaid skill documentation
+│   └── kroki/
+│       ├── SKILL.md                 # Kroki skill documentation
+│       └── scripts/
+│           └── render_diagram.py        # Kroki.io rendering (27 types)
 ├── ARCHITECTURE.md                  # This file
 ├── CHANGELOG.md                     # Version history
 ├── CLAUDE.md                        # Developer instructions
@@ -206,7 +224,16 @@ For diagram generation with output path `diagram.png`:
 
 ## Version History
 
-### v1.3.2 (2026-02-24) — Current
+### v2.0.0 (2026-03-02) — Current
+
+- **Breaking:** Default image model changed from `gemini-3-pro-image-preview` to `gemini-3.1-flash-image-preview` (Nano Banana 2)
+- **Diagram skill** keeps `gemini-3-pro-image-preview` (Nano Banana Pro) for highest quality
+- **`imageConfig` support** — aspect ratio and resolution control via `--aspect-ratio` and `--resolution` flags
+- **New CLI args:** `--aspect-ratio` (14 ratios) and `--resolution` (512px, 1K, 2K, 4K)
+- **Replaced mermaid skill with kroki skill** — renders 27 diagram types (Mermaid, PlantUML, GraphViz, D2, etc.) to PNG/SVG via Kroki.io
+- Removed deprecated `gemini-2.5-flash-image-preview` references
+
+### v1.3.2 (2026-02-24)
 
 - Fix OpenRouter 401 when `--provider openrouter` with both API keys set
 - Fix OpenRouter images saved as JPEG instead of PNG
@@ -278,4 +305,4 @@ marketplace.json updated + submodule pointer advanced
 
 ---
 
-**Last Updated:** 2026-02-24
+**Last Updated:** 2026-03-02

@@ -1,6 +1,6 @@
 ---
 name: diagram
-description: "Generate publication-quality technical diagrams using Nano Banana Pro (Gemini 3 Pro Image) with AI-powered quality review. Smart iteration only regenerates when quality is below threshold."
+description: "Generate publication-quality technical diagrams using Nano Banana Pro (gemini-3-pro-image-preview) with AI-powered quality review. Smart iteration only regenerates when quality is below threshold. Supports resolution control (512px–4K)."
 allowed-tools: [Read, Write, Edit, Bash]
 disable-model-invocation: true
 ---
@@ -37,6 +37,9 @@ python3 skills/diagram/scripts/generate_diagram.py "Microservices architecture w
 
 # Generate a flowchart for a presentation
 python3 skills/diagram/scripts/generate_diagram.py "User authentication flow with OAuth2" -o auth_flow.png --doc-type presentation
+
+# Generate with higher resolution
+python3 skills/diagram/scripts/generate_diagram.py "Complex system diagram" -o system.png --resolution 2K
 
 # Generate with verbose output
 python3 skills/diagram/scripts/generate_diagram.py "Database schema for e-commerce" -o schema.png -v
@@ -129,7 +132,7 @@ python3 generate_diagram.py "C4 Container diagram for e-commerce platform:
 
 ## How It Works
 
-1. **Initial Generation**: Nano Banana Pro (Gemini 3 Pro Image) generates the diagram
+1. **Initial Generation**: Nano Banana Pro (`gemini-3-pro-image-preview`) generates the diagram
 2. **Quality Review**: Gemini 3 Pro evaluates on 5 criteria:
    - Technical Accuracy (0-2 pts)
    - Clarity and Readability (0-2 pts)

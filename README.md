@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/flight505/nano-banana"><img src="https://img.shields.io/badge/version-1.3.2-blue.svg" alt="Version"></a>
+  <a href="https://github.com/flight505/nano-banana"><img src="https://img.shields.io/badge/version-2.0.0-blue.svg" alt="Version"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License"></a>
   <a href="https://github.com/anthropics/claude-code"><img src="https://img.shields.io/badge/Claude%20Code-Plugin-purple.svg" alt="Claude Code Plugin"></a>
 </p>
@@ -22,9 +22,8 @@
 - **Smart Iteration** - Only regenerates when quality is below threshold (saves API calls)
 - **Document-Type Aware** - 13 quality presets (journal, architecture, presentation, etc.)
 - **AI Quality Review** - Gemini 3 Pro reviews each diagram generation
-- **Multiple Skills** - Technical diagrams, general images, and Mermaid text diagrams
+- **Multiple Skills** - Technical diagrams and general images
 - **Image Editing** - Modify existing images with natural language
-- **Version Control** - Mermaid diagrams are text-based and git-friendly
 
 ## Quick Start
 
@@ -112,36 +111,50 @@ python3 skills/image/scripts/generate_image.py "Make the sky purple" --input pho
 ```
 
 **Available Models:**
-- `google/gemini-3-pro-image-preview` (default)
+- `gemini-3.1-flash-image-preview` (default — Nano Banana 2, fastest)
+- `gemini-3-pro-image-preview` (Nano Banana Pro, highest quality)
 - `black-forest-labs/flux.2-pro` (via OpenRouter)
 - `black-forest-labs/flux.2-flex` (via OpenRouter)
 
+**Aspect Ratio & Resolution:**
+```bash
+# Generate with specific aspect ratio and resolution
+python3 skills/image/scripts/generate_image.py \
+    "A wide cinematic landscape" -o landscape.png \
+    --aspect-ratio 16:9 --resolution 2K
+```
+
 [Full Image Documentation](skills/image/SKILL.md)
 
-### Mermaid Skill
+### Kroki Skill
 
-Create text-based diagrams that render in GitHub, GitLab, and documentation.
+Render text-based diagrams (Mermaid, PlantUML, GraphViz, D2, and 23 more) to PNG/SVG.
 
-```markdown
-```mermaid
-flowchart LR
-    A[User] --> B[API] --> C[Database]
+```bash
+# Render Mermaid to PNG
+python3 skills/kroki/scripts/render_diagram.py -t mermaid -o flow.png \
+    --source 'flowchart LR; A-->B-->C'
+
+# Render PlantUML to SVG
+python3 skills/kroki/scripts/render_diagram.py -t plantuml -i diagram.puml -o diagram.svg
+
+# List all 27 supported types
+python3 skills/kroki/scripts/render_diagram.py --list-types
 ```
-```
 
-[Full Mermaid Documentation](skills/mermaid/SKILL.md)
+[Full Kroki Documentation](skills/kroki/SKILL.md)
 
 ## When to Use Which Skill
 
 | Need | Use |
 |------|-----|
-| Architecture diagrams | `diagram` |
-| Flowcharts with boxes | `diagram` |
-| ERD / data models | `diagram` |
+| Architecture diagrams (from description) | `diagram` |
+| Flowcharts with boxes (from description) | `diagram` |
+| ERD / data models (from description) | `diagram` |
 | Photos / artistic images | `image` |
 | Edit existing photos | `image` |
-| Version-controlled diagrams | `mermaid` |
-| GitHub README diagrams | `mermaid` |
+| Render Mermaid/PlantUML/DOT source | `kroki` |
+| Render D2/C4/Excalidraw source | `kroki` |
 
 ## Configuration
 
@@ -195,8 +208,10 @@ nano-banana/
 │   │   ├── SKILL.md
 │   │   └── scripts/
 │   │       └── generate_image.py        # Image generation/editing
-│   └── mermaid/                 # Text-based diagrams
-│       └── SKILL.md
+│   └── kroki/                   # Text-based diagram rendering
+│       ├── SKILL.md
+│       └── scripts/
+│           └── render_diagram.py        # Kroki.io rendering (27 types)
 ├── ARCHITECTURE.md              # Technical architecture documentation
 ├── CHANGELOG.md                 # Version history
 ├── CLAUDE.md                    # Developer instructions

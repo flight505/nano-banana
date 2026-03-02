@@ -1,6 +1,6 @@
 # Nano Banana - Claude Code Plugin Instructions
 
-AI-powered image and diagram generation for Claude Code using Google Gemini API (preferred) or OpenRouter.
+AI-powered image and diagram generation for Claude Code using Nano Banana 2 (fast) and Nano Banana Pro (quality) via Google Gemini API (preferred) or OpenRouter.
 
 ## Version Management & Marketplace Sync
 
@@ -38,11 +38,11 @@ AI-powered image and diagram generation for Claude Code using Google Gemini API 
 
 ## Skills
 
-| Skill | Description |
-|-------|-------------|
-| `diagram` | Generate technical diagrams with AI quality review and smart iteration |
-| `image` | Generate and edit images using AI models |
-| `mermaid` | Create text-based diagrams with Mermaid syntax |
+| Skill | Description | Default Model |
+|-------|-------------|---------------|
+| `diagram` | Generate technical diagrams with AI quality review and smart iteration | Nano Banana Pro (`gemini-3-pro-image-preview`) |
+| `image` | Generate and edit images using AI models | Nano Banana 2 (`gemini-3.1-flash-image-preview`) |
+| `kroki` | Render text-based diagrams (Mermaid, PlantUML, GraphViz, D2, etc.) to PNG/SVG | Kroki.io (free) |
 
 ## Usage
 
@@ -58,6 +58,12 @@ python3 skills/diagram/scripts/generate_diagram.py "description" -o output.png -
 
 ```bash
 python3 skills/image/scripts/generate_image.py "description" -o output.png
+
+# With aspect ratio and resolution
+python3 skills/image/scripts/generate_image.py "description" -o output.png --aspect-ratio 16:9 --resolution 2K
+
+# Use Nano Banana Pro for highest quality
+python3 skills/image/scripts/generate_image.py "description" -o output.png -m gemini-3-pro-image-preview
 ```
 
 ### Edit an Image or Diagram
@@ -87,9 +93,9 @@ python3 skills/diagram/scripts/generate_diagram.py "description" -o output.png -
 
 ## When to Use Which Skill
 
-- **Technical diagrams** (architecture, flowcharts, ERD) → `diagram` skill
+- **Technical diagrams from description** (architecture, flowcharts, ERD) → `diagram` skill
 - **Creative images** (photos, art, illustrations) → `image` skill
-- **Version-controlled diagrams** → `mermaid` skill
+- **Render diagram source code** (Mermaid, PlantUML, DOT, D2) → `kroki` skill
 
 ## Key Principles
 

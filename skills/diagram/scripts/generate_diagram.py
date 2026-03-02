@@ -3,7 +3,8 @@
 Diagram generation using Nano Banana Pro.
 
 Generate any technical diagram by describing it in natural language.
-Nano Banana Pro handles everything automatically with smart iterative refinement.
+Nano Banana Pro (gemini-3-pro-image-preview) handles everything automatically
+with smart iterative refinement for highest diagram quality.
 
 Smart iteration: Only regenerates if quality is below threshold for your document type.
 Quality review: Uses Gemini 3 Pro for professional evaluation.
@@ -15,8 +16,8 @@ Usage:
     # Generate for presentation (lower threshold, faster)
     python generate_diagram.py "User flow diagram" -o flow.png --doc-type presentation
 
-    # Generate for README
-    python generate_diagram.py "System overview" -o system.png --doc-type readme
+    # Generate with higher resolution
+    python generate_diagram.py "System overview" -o system.png --resolution 2K
 """
 
 import argparse
@@ -33,8 +34,8 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 How it works:
-  Simply describe your diagram in natural language
-  Nano Banana Pro generates it automatically with:
+  Simply describe your diagram in natural language.
+  Nano Banana Pro (gemini-3-pro-image-preview) generates it automatically with:
   - Smart iteration (only regenerates if quality is below threshold)
   - Quality review by Gemini 3 Pro
   - Document-type aware quality thresholds
@@ -56,9 +57,15 @@ Document Types (quality thresholds):
   presentation  6.5/10 - Slides, talks
   default       7.5/10 - General purpose
 
+Resolutions:
+  512px, 1K, 2K, 4K
+
 Examples:
   # Generate architecture diagram
   python generate_diagram.py "Microservices with API gateway" -o arch.png --doc-type architecture
+
+  # Generate with higher resolution
+  python generate_diagram.py "Complex system" -o system.png --resolution 2K
 
   # Generate for slides (faster)
   python generate_diagram.py "Data pipeline flow" -o pipeline.png --doc-type presentation
@@ -90,6 +97,9 @@ Environment Variables:
                        help="API provider (default: auto — prefers Google)")
     parser.add_argument("--input", "-i", type=str,
                        help="Input diagram image to edit (enables edit mode)")
+    parser.add_argument("--resolution", type=str,
+                       choices=["512px", "1K", "2K", "4K"],
+                       help="Image resolution (512px, 1K, 2K, 4K)")
     parser.add_argument("--timeout", type=int, default=120,
                        help="Request timeout in seconds (default: 120)")
     parser.add_argument("-v", "--verbose", action="store_true",
@@ -142,6 +152,9 @@ Environment Variables:
             print(f"Error: Input image not found: {args.input}")
             sys.exit(1)
         cmd.extend(["--input", args.input])
+
+    if args.resolution:
+        cmd.extend(["--resolution", args.resolution])
 
     if args.timeout != 120:
         cmd.extend(["--timeout", str(args.timeout)])

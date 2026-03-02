@@ -1,7 +1,7 @@
 {
   "name": "nano-banana",
-  "version": "1.3.2",
-  "description": "AI-powered image and diagram generation for Claude Code - uses Nano Banana Pro (Gemini 3 Pro Image) with intelligent quality review and smart iteration.",
+  "version": "2.0.0",
+  "description": "AI-powered image and diagram generation for Claude Code - uses Nano Banana 2 (Gemini 3.1 Flash Image) for fast generation and Nano Banana Pro (Gemini 3 Pro Image) for professional diagrams with quality review.",
   "author": {
     "name": "Jesper Vang",
     "url": "https://github.com/flight505"
@@ -15,7 +15,8 @@
     "ai",
     "visualization",
     "openrouter",
-    "mermaid",
+    "gemini",
+    "kroki",
     "technical-diagrams",
     "image-editing"
   ],
@@ -23,6 +24,6 @@
   "skills": [
     "./skills/diagram",
     "./skills/image",
-    "./skills/mermaid"
+    "./skills/kroki"
   ]
 }

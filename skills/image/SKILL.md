@@ -1,6 +1,6 @@
 ---
 name: image
-description: "Generate and edit images using AI models. Supports Google Gemini API (preferred) and OpenRouter (FLUX, etc.)."
+description: "Generate and edit images using Nano Banana 2 (gemini-3.1-flash-image-preview, fastest) or Nano Banana Pro. Supports aspect ratio and resolution control. Google Gemini API preferred, OpenRouter fallback (FLUX, etc.)."
 allowed-tools: [Read, Write, Edit, Bash]
 disable-model-invocation: true
 ---
@@ -12,8 +12,9 @@ disable-model-invocation: true
 Generate and edit images using state-of-the-art AI models. Perfect for creating visual assets, concept art, illustrations, and editing existing images.
 
 **Key Features:**
-- 🎨 **Multiple Models**: Gemini 3 Pro Image, FLUX Pro, and more
+- 🎨 **Multiple Models**: Nano Banana 2 (fast), Nano Banana Pro (quality), FLUX Pro, and more
 - ✏️ **Image Editing**: Modify existing images with natural language
+- 📐 **Aspect Ratio & Resolution**: Control output dimensions (16:9, 4K, etc.)
 - 🚀 **Simple API**: One command to generate or edit
 - 💾 **Automatic Saving**: Handles file formats automatically
 
@@ -43,6 +44,25 @@ python3 skills/image/scripts/generate_image.py "Make the sky more dramatic with 
 python3 skills/image/scripts/generate_image.py "Abstract geometric art in blue and gold" -m "black-forest-labs/flux.2-pro" -o abstract.png
 ```
 
+### Aspect Ratio & Resolution
+
+```bash
+# Wide cinematic landscape
+python3 skills/image/scripts/generate_image.py "Cinematic mountain vista" -o landscape.png --aspect-ratio 16:9
+
+# High-resolution square image
+python3 skills/image/scripts/generate_image.py "Product photo" -o product.png --aspect-ratio 1:1 --resolution 4K
+
+# Ultra-wide banner
+python3 skills/image/scripts/generate_image.py "Website hero banner" -o banner.png --aspect-ratio 21:9 --resolution 2K
+
+# Use Nano Banana Pro for highest quality
+python3 skills/image/scripts/generate_image.py "Professional headshot" -o headshot.png -m gemini-3-pro-image-preview
+```
+
+**Supported aspect ratios:** 1:1, 1:4, 1:8, 2:3, 3:2, 3:4, 4:1, 4:3, 4:5, 5:4, 8:1, 9:16, 16:9, 21:9
+**Supported resolutions:** 512px, 1K, 2K, 4K
+
 ### Editing Existing Images
 
 Use `/nano-banana:edit` to modify an existing image, or call the script directly:
@@ -61,11 +81,12 @@ python3 skills/image/scripts/generate_image.py "Add dramatic storm clouds" --inp
 
 ## Available Models
 
-| Model | ID | Capabilities | Best For |
-|-------|-----|-------------|----------|
-| **Gemini 3 Pro Image** | `google/gemini-3-pro-image-preview` | Generation + Editing | High quality, versatile |
-| **FLUX Pro** | `black-forest-labs/flux.2-pro` | Generation + Editing | Fast, artistic |
-| **FLUX Flex** | `black-forest-labs/flux.2-flex` | Generation only | Development/testing |
+| Model | ID | Speed | Capabilities | Best For |
+|-------|-----|-------|-------------|----------|
+| **Nano Banana 2** | `gemini-3.1-flash-image-preview` | Flash (fastest) | Generation + Editing | Default — high-volume, general use |
+| **Nano Banana Pro** | `gemini-3-pro-image-preview` | Pro | Generation + Editing | Professional assets, best quality |
+| **FLUX Pro** | `black-forest-labs/flux.2-pro` | Fast | Generation + Editing | Artistic, OpenRouter only |
+| **FLUX Flex** | `black-forest-labs/flux.2-flex` | Fast | Generation only | Development/testing |
 
 ## Usage Examples
 
@@ -216,7 +237,7 @@ Large or complex images may take up to 2 minutes. Timeout is set to 120 seconds.
 
 ## Cost Considerations
 
-- Gemini 3 Pro Image: ~$2/M input, ~$12/M output tokens
+- Nano Banana 2 (Flash): Cheapest — free tier available, ~$0.01-0.05 per image
+- Nano Banana Pro: ~$0.02-0.10 per image
 - FLUX Pro: Check OpenRouter for current pricing
-- Typical image generation: $0.02-0.10 per image
 - Image editing: Similar to generation costs

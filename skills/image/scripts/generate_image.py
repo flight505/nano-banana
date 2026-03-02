@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-Generate and edit images using Nano Banana Pro.
+Generate and edit images using Nano Banana 2 (fast) or Nano Banana Pro (quality).
 
 Supports Google Gemini API directly (preferred) and OpenRouter as fallback.
 
 Models:
-- gemini-3-pro-image-preview (default - generation and editing)
+- gemini-3.1-flash-image-preview (default - Nano Banana 2, fastest)
+- gemini-3-pro-image-preview (Nano Banana Pro, highest quality)
 - black-forest-labs/flux.2-pro (OpenRouter only, generation and editing)
 - black-forest-labs/flux.2-flex (OpenRouter only, generation only)
 
@@ -16,8 +17,14 @@ Usage:
     # Force Google direct API
     python generate_image.py "A sunset" -o sunset.png --provider google
 
+    # Generate with specific aspect ratio and resolution
+    python generate_image.py "A wide landscape" -o landscape.png --aspect-ratio 16:9 --resolution 2K
+
     # Edit an existing image
     python generate_image.py "Make the sky purple" --input photo.jpg -o edited.png
+
+    # Use Nano Banana Pro for highest quality
+    python generate_image.py "Professional headshot" -m gemini-3-pro-image-preview -o headshot.png
 
     # Use OpenRouter with a specific model
     python generate_image.py "Abstract art" -m "black-forest-labs/flux.2-pro" -o art.png --provider openrouter
@@ -88,7 +95,7 @@ def _resolve_provider(api_key: Optional[str], provider: str) -> tuple:
         if not gemini_key:
             gemini_key = os.getenv("GEMINI_API_KEY") or load_env_value("GEMINI_API_KEY")
         if gemini_key:
-            return ("google", gemini_key, "gemini-3-pro-image-preview")
+            return ("google", gemini_key, "gemini-3.1-flash-image-preview")
         if provider == "google":
             raise ValueError("GEMINI_API_KEY not found. Get one at: https://aistudio.google.com/apikey")
 
@@ -97,7 +104,7 @@ def _resolve_provider(api_key: Optional[str], provider: str) -> tuple:
         if not or_key:
             or_key = os.getenv("OPENROUTER_API_KEY") or load_env_value("OPENROUTER_API_KEY")
         if or_key:
-            return ("openrouter", or_key, "google/gemini-3-pro-image-preview")
+            return ("openrouter", or_key, "google/gemini-3.1-flash-image-preview")
         if provider == "openrouter":
             raise ValueError("OPENROUTER_API_KEY not found. Get one at: https://openrouter.ai/keys")
 
@@ -112,7 +119,8 @@ def _resolve_provider(api_key: Optional[str], provider: str) -> tuple:
 
 def _generate_via_google(
     prompt: str, api_key: str, model: str, output_path: str,
-    input_image: Optional[str], timeout: int
+    input_image: Optional[str], timeout: int,
+    aspect_ratio: Optional[str] = None, resolution: Optional[str] = None
 ) -> dict:
     """Generate image using Google Gemini API directly.
 
@@ -129,9 +137,18 @@ def _generate_via_google(
         mime = get_mime_type(input_image)
         parts.append({"inline_data": {"mime_type": mime, "data": base64.b64encode(img_bytes).decode()}})
 
+    generation_config: dict = {"responseModalities": ["TEXT", "IMAGE"]}
+    if aspect_ratio or resolution:
+        image_config: dict = {}
+        if aspect_ratio:
+            image_config["aspectRatio"] = aspect_ratio
+        if resolution:
+            image_config["imageSize"] = resolution
+        generation_config["imageConfig"] = image_config
+
     payload = {
         "contents": [{"parts": parts}],
-        "generationConfig": {"responseModalities": ["TEXT", "IMAGE"]}
+        "generationConfig": generation_config
     }
 
     data = json.dumps(payload).encode("utf-8")
@@ -297,14 +314,16 @@ def _generate_via_openrouter(
 
 def generate_image(
     prompt: str,
-    model: str = "google/gemini-3-pro-image-preview",
+    model: str = "google/gemini-3.1-flash-image-preview",
     output_path: str = "generated_image.png",
     api_key: Optional[str] = None,
     input_image: Optional[str] = None,
     width: Optional[int] = None,
     height: Optional[int] = None,
     timeout: int = 120,
-    provider: str = "auto"
+    provider: str = "auto",
+    aspect_ratio: Optional[str] = None,
+    resolution: Optional[str] = None
 ) -> dict:
     """
     Generate or edit an image using Google Gemini API (preferred) or OpenRouter.
@@ -321,6 +340,8 @@ def generate_image(
         height: Target image height in pixels (optional)
         timeout: Request timeout in seconds (default: 120)
         provider: API provider - "auto" (prefer Google), "google", or "openrouter"
+        aspect_ratio: Image aspect ratio (e.g. "16:9", "1:1", "4:3")
+        resolution: Image resolution (512px, 1K, 2K, 4K)
 
     Returns:
         dict: Response from API
@@ -359,9 +380,13 @@ def generate_image(
     print(f"Model: {model}")
     print(f"Output: {output_path}")
 
+    if aspect_ratio:
+        print(f"Aspect Ratio: {aspect_ratio}")
+    if resolution:
+        print(f"Resolution: {resolution}")
     if width and height:
-        aspect_ratio = calculate_aspect_ratio(width, height)
-        print(f"Dimensions: {width}x{height} (aspect ratio: {aspect_ratio})")
+        computed_ratio = calculate_aspect_ratio(width, height)
+        print(f"Dimensions: {width}x{height} (aspect ratio: {computed_ratio})")
 
     print(f"Timeout: {timeout}s")
     print(f"{'='*50}\n")
@@ -369,7 +394,8 @@ def generate_image(
     if resolved_provider == "google":
         return _generate_via_google(
             prompt=prompt, api_key=resolved_key, model=model,
-            output_path=output_path, input_image=input_image, timeout=timeout
+            output_path=output_path, input_image=input_image, timeout=timeout,
+            aspect_ratio=aspect_ratio, resolution=resolution
         )
 
     return _generate_via_openrouter(
@@ -381,7 +407,7 @@ def generate_image(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Generate or edit images using Nano Banana Pro (Google Gemini or OpenRouter)",
+        description="Generate or edit images using Nano Banana 2 (Google Gemini or OpenRouter)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -390,6 +416,12 @@ Examples:
 
   # Force Google direct API
   python generate_image.py "A sunset" -o sunset.png --provider google
+
+  # Generate with specific aspect ratio and resolution
+  python generate_image.py "A wide landscape" -o landscape.png --aspect-ratio 16:9 --resolution 2K
+
+  # Use Nano Banana Pro for highest quality
+  python generate_image.py "Professional photo" -m gemini-3-pro-image-preview -o photo.png
 
   # Force OpenRouter
   python generate_image.py "A cat in space" -m "black-forest-labs/flux.2-pro" -o cat.png --provider openrouter
@@ -405,10 +437,17 @@ Providers:
   google         - Google Gemini API direct (free tier, reliable)
   openrouter     - OpenRouter (supports non-Google models like FLUX)
 
-Models:
-  - gemini-3-pro-image-preview (default, high quality, generation + editing)
+Models (Nano Banana family):
+  - gemini-3.1-flash-image-preview (default, Nano Banana 2 — fastest, general use)
+  - gemini-3-pro-image-preview (Nano Banana Pro — best quality, professional assets)
   - black-forest-labs/flux.2-pro (OpenRouter only, fast, high quality)
   - black-forest-labs/flux.2-flex (OpenRouter only, development version)
+
+Aspect Ratios:
+  1:1, 1:4, 1:8, 2:3, 3:2, 3:4, 4:1, 4:3, 4:5, 5:4, 8:1, 9:16, 16:9, 21:9
+
+Resolutions:
+  512px, 1K, 2K, 4K
 
 Environment:
   GEMINI_API_KEY        Google Gemini API key (preferred, free tier)
@@ -418,8 +457,8 @@ Environment:
 
     parser.add_argument("prompt", type=str,
                        help="Text description of the image, or editing instructions")
-    parser.add_argument("--model", "-m", type=str, default="google/gemini-3-pro-image-preview",
-                       help="Model ID (default: google/gemini-3-pro-image-preview)")
+    parser.add_argument("--model", "-m", type=str, default="google/gemini-3.1-flash-image-preview",
+                       help="Model ID (default: google/gemini-3.1-flash-image-preview)")
     parser.add_argument("--output", "-o", type=str, default="generated_image.png",
                        help="Output file path (default: generated_image.png)")
     parser.add_argument("--input", "-i", type=str,
@@ -429,10 +468,17 @@ Environment:
                        help="API provider: auto (prefer Google), google, or openrouter (default: auto)")
     parser.add_argument("--api-key", type=str,
                        help="API key (or set GEMINI_API_KEY / OPENROUTER_API_KEY)")
+    parser.add_argument("--aspect-ratio", type=str,
+                       choices=["1:1", "1:4", "1:8", "2:3", "3:2", "3:4", "4:1",
+                                "4:3", "4:5", "5:4", "8:1", "9:16", "16:9", "21:9"],
+                       help="Image aspect ratio (e.g. 16:9, 1:1, 4:3)")
+    parser.add_argument("--resolution", type=str,
+                       choices=["512px", "1K", "2K", "4K"],
+                       help="Image resolution (512px, 1K, 2K, 4K)")
     parser.add_argument("--width", type=int,
-                       help="Target image width in pixels (optional)")
+                       help="Target image width in pixels (optional, legacy)")
     parser.add_argument("--height", type=int,
-                       help="Target image height in pixels (optional)")
+                       help="Target image height in pixels (optional, legacy)")
     parser.add_argument("--timeout", type=int, default=120,
                        help="Request timeout in seconds (default: 120)")
 
@@ -457,7 +503,9 @@ Environment:
             width=args.width,
             height=args.height,
             timeout=args.timeout,
-            provider=args.provider
+            provider=args.provider,
+            aspect_ratio=args.aspect_ratio,
+            resolution=args.resolution
         )
     except (ValueError, FileNotFoundError, RuntimeError) as e:
         print(f"\n✗ Error: {e}")

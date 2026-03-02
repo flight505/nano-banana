@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.0] - 2026-03-02
+
+### ⚠️ Breaking
+
+- **Default image model changed** from `gemini-3-pro-image-preview` to `gemini-3.1-flash-image-preview` (Nano Banana 2 — faster, cheaper). Use `-m gemini-3-pro-image-preview` for the old default.
+- Removed deprecated `gemini-2.5-flash-image-preview` references (model shut down)
+
+### ✨ Added
+
+- **Nano Banana 2** (`gemini-3.1-flash-image-preview`) — new default for image skill, fastest generation
+- **`--aspect-ratio` flag** on image skill — 14 aspect ratios (1:1, 16:9, 9:16, 4:3, 21:9, etc.)
+- **`--resolution` flag** on image and diagram skills — 512px, 1K, 2K, 4K
+- **`imageConfig` API support** — sends `aspectRatio` and `imageSize` to Gemini API via `generationConfig.imageConfig`
+- **Kroki skill** — render 27 text-based diagram types (Mermaid, PlantUML, GraphViz, D2, Excalidraw, BPMN, etc.) to PNG/SVG/PDF via [Kroki.io](https://kroki.io)
+- **`gemini` and `kroki` keywords** added to plugin.json
+
+### 🗑️ Removed
+
+- **Mermaid skill** — replaced by kroki skill (broader coverage: 27 diagram types with actual rendering to PNG/SVG)
+
+### 🔄 Changed
+
+- **Image skill** defaults to Nano Banana 2 (Flash) for speed
+- **Diagram skill** keeps Nano Banana Pro for highest quality output
+- Updated all documentation with new model hierarchy and naming
+
+---
+
 ## [1.3.2] - 2026-02-24
 
 ### 🐛 Fixed

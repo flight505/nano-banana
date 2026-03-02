@@ -150,4 +150,4 @@ python3 skills/image/scripts/generate_image.py "A sunset" -o sunset.png --provid
 See the skill documentation for more examples:
 - `skills/diagram/SKILL.md` - Technical diagram generation
 - `skills/image/SKILL.md` - Image generation and editing
-- `skills/mermaid/SKILL.md` - Text-based diagrams
+- `skills/kroki/SKILL.md` - Text-based diagram rendering (27 types via Kroki.io)

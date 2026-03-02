@@ -3,7 +3,7 @@
 AI-powered diagram generation using Nano Banana Pro.
 
 This script uses a smart iterative refinement approach:
-1. Generate initial diagram with Nano Banana Pro (Gemini 3 Pro Image)
+1. Generate initial diagram with Nano Banana Pro (Gemini 3 Pro Image) for highest quality
 2. AI quality review using Gemini 3 Pro for professional critique
 3. Only regenerate if quality is below threshold for document type
 4. Repeat until quality meets standards (max iterations)
@@ -16,6 +16,7 @@ Usage:
     python generate_diagram_ai.py "Create a flowchart showing user authentication flow" -o flowchart.png
     python generate_diagram_ai.py "System architecture diagram for microservices" -o architecture.png --doc-type architecture
     python generate_diagram_ai.py "Simple block diagram" -o diagram.png --doc-type presentation
+    python generate_diagram_ai.py "Wide architecture overview" -o arch.png --resolution 2K
 """
 
 import argparse
@@ -106,7 +107,8 @@ LAYOUT:
 """
 
     def __init__(self, api_key: Optional[str] = None, verbose: bool = False,
-                 timeout: int = 120, provider: str = "auto"):
+                 timeout: int = 120, provider: str = "auto",
+                 resolution: Optional[str] = None):
         """
         Initialize the generator.
 
@@ -115,9 +117,11 @@ LAYOUT:
             verbose: Print detailed progress information
             timeout: Request timeout in seconds (default: 120)
             provider: API provider - "auto" (prefer Google), "google", or "openrouter"
+            resolution: Image resolution (512px, 1K, 2K, 4K)
         """
         self.verbose = verbose
         self.timeout = timeout
+        self.resolution = resolution
         self._last_error = None
 
         # Provider auto-detection: prefer Google direct API
@@ -178,7 +182,8 @@ LAYOUT:
         return convert_to_png(data)
 
     def _make_google_request(self, model: str, parts: List[Dict[str, Any]],
-                            response_modalities: Optional[List[str]] = None) -> Dict[str, Any]:
+                            response_modalities: Optional[List[str]] = None,
+                            image_config: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """Make a request to Google Gemini API directly."""
         url = f"{self.base_url}/models/{model}:generateContent?key={self.api_key}"
 
@@ -187,7 +192,10 @@ LAYOUT:
         }
 
         if response_modalities:
-            payload["generationConfig"] = {"responseModalities": response_modalities}
+            generation_config: Dict[str, Any] = {"responseModalities": response_modalities}
+            if image_config:
+                generation_config["imageConfig"] = image_config
+            payload["generationConfig"] = generation_config
 
         self._log(f"Making Google API request to {model}...")
 
@@ -403,9 +411,14 @@ LAYOUT:
             mime = get_mime_type(input_image)
             parts.append({"inline_data": {"mime_type": mime, "data": base64.b64encode(img_bytes).decode()}})
 
+        image_config = None
+        if self.resolution:
+            image_config = {"imageSize": self.resolution}
+
         response = self._make_google_request(
             model=self.image_model, parts=parts,
-            response_modalities=["TEXT", "IMAGE"]
+            response_modalities=["TEXT", "IMAGE"],
+            image_config=image_config
         )
 
         if "error" in response:
@@ -765,6 +778,9 @@ Examples:
   # Generate flowchart for presentation (lower threshold, faster)
   python generate_diagram_ai.py "User authentication flow" -o auth_flow.png --doc-type presentation
 
+  # Generate with higher resolution
+  python generate_diagram_ai.py "Complex system diagram" -o system.png --resolution 2K
+
   # Generate with verbose output
   python generate_diagram_ai.py "Database schema for e-commerce" -o schema.png -v
 
@@ -783,6 +799,13 @@ Document Types (quality thresholds):
   poster        7.0/10 - Academic posters
   presentation  6.5/10 - Slides, talks
   default       7.5/10 - General purpose
+
+Model:
+  Diagrams use Nano Banana Pro (gemini-3-pro-image-preview) for highest quality.
+  Quality review uses Gemini 3 Pro (gemini-3-pro-preview).
+
+Resolutions:
+  512px, 1K, 2K, 4K
 
 Note: Multiple iterations only occur if quality is BELOW the threshold.
       If the first generation meets the threshold, no extra API calls are made.
@@ -806,6 +829,9 @@ Environment:
     parser.add_argument("--provider", default="auto",
                        choices=["auto", "google", "openrouter"],
                        help="API provider: auto (prefer Google), google, or openrouter (default: auto)")
+    parser.add_argument("--resolution", type=str,
+                       choices=["512px", "1K", "2K", "4K"],
+                       help="Image resolution (512px, 1K, 2K, 4K)")
     parser.add_argument("--api-key", help="API key (or set GEMINI_API_KEY / OPENROUTER_API_KEY)")
     parser.add_argument("--timeout", type=int, default=120,
                        help="Request timeout in seconds (default: 120)")
@@ -825,7 +851,8 @@ Environment:
     try:
         generator = NanoBananaGenerator(
             api_key=args.api_key, verbose=args.verbose,
-            timeout=args.timeout, provider=args.provider
+            timeout=args.timeout, provider=args.provider,
+            resolution=args.resolution
         )
         results = generator.generate_iterative(
             user_prompt=args.prompt,

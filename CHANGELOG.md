@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.0] — 2026-03-12
+
+### Breaking Changes
+
+- Dropped OpenRouter provider support — Google Gemini API only
+- Removed `--provider` flag from image and diagram skills
+- Requires `google-genai` Python SDK (`uv sync` or `pip install google-genai`)
+- Model IDs updated to 3.1 versions
+
+### Added
+
+- **Video generation skill** — Veo 3.1 text-to-video, image-to-video, frame interpolation, video extension
+- `skills/common/client.py` — shared google-genai client factory
+- ffmpeg audio stripping for generated videos
+
+### Changed
+
+- Image skill migrated from urllib.request to google-genai SDK
+- Diagram skill migrated from urllib.request to google-genai SDK
+- Default image model: `gemini-3.1-flash-image-preview`
+- Default diagram model: `gemini-3.1-pro-image-preview`
+- Simplified provider architecture (single SDK, no fallback chain)
+
+### Removed
+
+- OpenRouter provider and all FLUX model support
+- `--provider` CLI flag
+- urllib.request HTTP client code
+
+---
+
 ## [2.0.0] - 2026-03-02
 
 ### ⚠️ Breaking

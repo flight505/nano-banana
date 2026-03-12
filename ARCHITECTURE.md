@@ -1,6 +1,6 @@
 # Nano Banana — Architecture
 
-**Version:** 2.0.0
+**Version:** 3.0.0
 **Repository:** https://github.com/flight505/nano-banana
 **Author:** flight505 (Jesper Vang)
 
@@ -8,65 +8,50 @@
 
 ## Design Philosophy
 
-1. **Zero Dependencies** — Python stdlib only (`urllib.request`), no PEP 668 issues
+1. **google-genai SDK** — single SDK for all Gemini and Veo models (replaces urllib.request)
 2. **Smart Iteration** — Threshold-based regeneration, not fixed iteration count
 3. **Document-Type Awareness** — 13 quality presets for different output contexts
-4. **Dual Provider** — Google Gemini API preferred, OpenRouter fallback
+4. **Single Provider** — Google Gemini API only (no fallback chain)
 5. **Explicit Control** — Skills use `disable-model-invocation: true` to prevent unintended generation
 
 ---
 
 ## Provider Architecture
 
+### SDK Migration (v3.0.0)
+
+All skills now use the `google-genai` Python SDK instead of raw `urllib.request` calls. The shared client factory in `skills/common/client.py` creates and configures the client from `GEMINI_API_KEY`.
+
 ### Model Hierarchy
 
 | Name | Model ID | Speed | Use Case |
 |------|----------|-------|----------|
 | **Nano Banana 2** | `gemini-3.1-flash-image-preview` | Flash (fastest) | High-volume, general use (image skill default) |
-| **Nano Banana Pro** | `gemini-3-pro-image-preview` | Pro | Professional assets, best quality (diagram skill default) |
-| **Nano Banana** (legacy) | `gemini-2.5-flash-image` | GA stable | Older, maintained until Oct 2026 |
+| **Nano Banana Pro** | `gemini-3.1-pro-image-preview` | Pro | Professional assets, best quality (diagram skill default) |
+| **Veo 3.1 Fast** | `veo-3.1-fast-generate-preview` | Fast | Video generation (video skill default) |
+| **Veo 3.1** | `veo-3.1-generate-preview` | Standard | High-quality video generation |
+| **Review** | `gemini-3.1-pro-preview` | Pro | AI quality review (diagram skill) |
 
-### Provider Auto-Detection
+### Google Gemini API (via google-genai SDK)
 
-```
-GEMINI_API_KEY set?  ──yes──→  Google Gemini API (direct, free tier)
-        │no
-OPENROUTER_API_KEY set?  ──yes──→  OpenRouter (multi-model)
-        │no
-        └→  Error: no API key found
-```
-
-Override with `--provider google` or `--provider openrouter`.
-
-### Google Gemini API (Preferred)
-
-- **Endpoint:** `https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}`
-- **Image generation:** `generationConfig.responseModalities: ["TEXT", "IMAGE"]`
+- **SDK:** `google-genai` Python package
+- **Client factory:** `skills/common/client.py` — shared `google.genai.Client` instance
+- **Image generation:** `client.models.generate_content()` with `response_modalities=["TEXT", "IMAGE"]`
+- **Video generation:** `client.models.generate_videos()` with Veo 3.1 models
 - **Image config:** `generationConfig.imageConfig: { aspectRatio, imageSize }`
 - **Aspect ratios:** 1:1, 1:4, 1:8, 2:3, 3:2, 3:4, 4:1, 4:3, 4:5, 5:4, 8:1, 9:16, 16:9, 21:9
 - **Image sizes:** 512px, 1K, 2K, 4K
-- **Image input:** `inlineData.mimeType` + `inlineData.data` (base64)
-- **Response parsing:** `candidates[0].content.parts[]` — find `inlineData` for image, `text` for text
-- **Models:** `gemini-3.1-flash-image-preview` (image default), `gemini-3-pro-image-preview` (diagram default), `gemini-3-pro-preview` (review)
 - **JPEG handling:** API may return JPEG for `.png` requests — auto-converted via `convert_to_png()`
-
-### OpenRouter (Fallback)
-
-- **Endpoint:** `https://openrouter.ai/api/v1/chat/completions`
-- **Image generation:** `modalities: ["text", "image"]`
-- **Image input:** `image_url.url` (data URI)
-- **Response parsing:** `choices[0].message.content[]` — find `image_url` for image
-- **JPEG handling:** Same as Google — `save_base64_image()` converts to PNG when output is `.png`
-- **Models:** `google/gemini-3.1-flash-image-preview`, `google/gemini-3-pro-image-preview`, `black-forest-labs/flux.2-pro`, `black-forest-labs/flux.2-flex`
 
 ---
 
-## Three-Skill System
+## Four-Skill System
 
 ```
 skills/
 ├── diagram/     → AI-generated technical diagrams with quality review + iteration
 ├── image/       → General image generation and editing
+├── video/       → Veo 3.1 text-to-video, image-to-video, frame interpolation, video extension
 └── kroki/       → Render text-based diagrams (27 types) to PNG/SVG via Kroki.io
 ```
 
@@ -107,6 +92,15 @@ Score < threshold? → Build improved prompt from critique → Regenerate (max 2
 - Supports generation and editing via `--input` flag
 - Importable as library — functions raise exceptions (`ValueError`, `RuntimeError`, `FileNotFoundError`), only `main()` calls `sys.exit()`
 
+### Video Skill
+
+**Core logic:** `skills/video/scripts/generate_video.py`
+
+- Text-to-video and image-to-video generation via Veo 3.1
+- Frame interpolation and video extension modes
+- Optional ffmpeg audio stripping for clean output
+- Default model: `veo-3.1-fast-generate-preview` (fast), `veo-3.1-generate-preview` (quality)
+
 ### Kroki Skill
 
 **Core logic:** `skills/kroki/scripts/render_diagram.py`
@@ -121,6 +115,14 @@ Score < threshold? → Build improved prompt from critique → Regenerate (max 2
 ---
 
 ## Shared Utilities (`skills/common/`)
+
+### `client.py`
+
+| Function | Purpose |
+|----------|---------|
+| `get_client()` | Returns a configured `google.genai.Client` using `GEMINI_API_KEY` |
+
+Shared client factory used by image, diagram, and video skills. Loads API key from environment or `.env` files via `env.py`.
 
 ### `image_utils.py`
 
@@ -186,6 +188,7 @@ nano-banana/
 ├── skills/
 │   ├── common/
 │   │   ├── __init__.py              # Exports shared utilities
+│   │   ├── client.py                # google-genai client factory
 │   │   ├── env.py                   # Unified .env loading (stdlib)
 │   │   └── image_utils.py           # PNG conversion, MIME types, base64
 │   ├── diagram/
@@ -197,6 +200,10 @@ nano-banana/
 │   │   ├── SKILL.md                 # Image skill documentation
 │   │   └── scripts/
 │   │       └── generate_image.py        # Image generation/editing
+│   ├── video/
+│   │   ├── SKILL.md                 # Video skill documentation
+│   │   └── scripts/
+│   │       └── generate_video.py        # Veo 3.1 video generation
 │   └── kroki/
 │       ├── SKILL.md                 # Kroki skill documentation
 │       └── scripts/
@@ -224,7 +231,18 @@ For diagram generation with output path `diagram.png`:
 
 ## Version History
 
-### v2.0.0 (2026-03-02) — Current
+### v3.0.0 (2026-03-12) — Current
+
+- **Breaking:** Dropped OpenRouter provider support — Google Gemini API only
+- **Breaking:** Requires `google-genai` Python SDK (replaces `urllib.request`)
+- **Breaking:** Model IDs updated to 3.1 versions
+- **Video generation skill** — Veo 3.1 text-to-video, image-to-video, frame interpolation, video extension
+- **Shared client factory** — `skills/common/client.py` for google-genai SDK
+- Default image model: `gemini-3.1-flash-image-preview`
+- Default diagram model: `gemini-3.1-pro-image-preview`
+- ffmpeg audio stripping for generated videos
+
+### v2.0.0 (2026-03-02)
 
 - **Breaking:** Default image model changed from `gemini-3-pro-image-preview` to `gemini-3.1-flash-image-preview` (Nano Banana 2)
 - **Diagram skill** keeps `gemini-3-pro-image-preview` (Nano Banana Pro) for highest quality
@@ -297,7 +315,7 @@ marketplace.json updated + submodule pointer advanced
 
 ## Technical Constraints
 
-- **Python 3.8+** minimum (f-strings, type hints, urllib.request modern API)
+- **Python 3.10+** minimum (google-genai SDK requirement)
 - **Internet required** for all generation (API calls)
 - **No vector output** (SVG tested Feb 2026, quality far inferior to raster — revisit when image models can natively output vector)
 - **PNG output only** for generation (base64 decoded from API response)
@@ -305,4 +323,4 @@ marketplace.json updated + submodule pointer advanced
 
 ---
 
-**Last Updated:** 2026-03-02
+**Last Updated:** 2026-03-12

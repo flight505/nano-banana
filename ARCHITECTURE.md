@@ -1,6 +1,6 @@
 # Nano Banana — Architecture
 
-**Version:** 3.0.0
+**Version:** 3.0.1
 **Repository:** https://github.com/flight505/nano-banana
 **Author:** flight505 (Jesper Vang)
 
@@ -214,7 +214,7 @@ nano-banana/
 ├── LICENSE                          # MIT License
 ├── README.md                        # Public documentation
 ├── pyproject.toml                   # Python packaging (uv/pip)
-└── requirements.txt                 # Empty (zero dependencies)
+└── requirements.txt                 # google-genai>=1.0.0
 ```
 
 ---
@@ -231,7 +231,18 @@ For diagram generation with output path `diagram.png`:
 
 ## Version History
 
-### v3.0.0 (2026-03-12) — Current
+### v3.0.1 (2026-03-12) — Current
+
+- **Fix:** Video resolution now passed to `GenerateVideosConfig` (was silently ignored)
+- **Fix:** Removed unsupported 4K video resolution (SDK only supports 720p/1080p)
+- **Fix:** Reference images use native `VideoGenerationReferenceImage` SDK type
+- **Fix:** Native `generate_audio` flag added (ffmpeg kept as backup)
+- **Fix:** Stale model ID `gemini-3-pro-image-preview` → `gemini-3.1-pro-image-preview`
+- **Fix:** Defensive `response.text` access in diagram review
+- **Fix:** `requires-python` corrected to `>=3.10`
+- Removed dead code (`save_base64_image`, `import base64`)
+
+### v3.0.0 (2026-03-12)
 
 - **Breaking:** Dropped OpenRouter provider support — Google Gemini API only
 - **Breaking:** Requires `google-genai` Python SDK (replaces `urllib.request`)

@@ -6,7 +6,7 @@ Uses the google-genai SDK for Google Gemini API access.
 
 Models:
 - gemini-3.1-flash-image-preview (default - Nano Banana 2, fastest)
-- gemini-3-pro-image-preview (Nano Banana Pro, highest quality)
+- gemini-3.1-pro-image-preview (Nano Banana Pro, highest quality)
 
 Usage:
     # Generate a new image
@@ -19,11 +19,10 @@ Usage:
     python generate_image.py "Make the sky purple" --input photo.jpg -o edited.png
 
     # Use Nano Banana Pro for highest quality
-    python generate_image.py "Professional headshot" -m gemini-3-pro-image-preview -o headshot.png
+    python generate_image.py "Professional headshot" -m gemini-3.1-pro-image-preview -o headshot.png
 """
 
 import argparse
-import base64
 import sys
 import time
 from pathlib import Path
@@ -34,22 +33,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from common.client import get_client  # noqa: E402
 from common.image_utils import convert_to_png, get_mime_type  # noqa: E402
 from google.genai import types  # noqa: E402
-
-
-def save_base64_image(base64_data: str, output_path: str) -> None:
-    """Save base64 encoded image to file."""
-    if "," in base64_data:
-        base64_data = base64_data.split(",", 1)[1]
-
-    output_dir = Path(output_path).parent
-    if output_dir and not output_dir.exists():
-        output_dir.mkdir(parents=True, exist_ok=True)
-
-    image_data = base64.b64decode(base64_data)
-    if output_path.lower().endswith(".png"):
-        image_data = convert_to_png(image_data)
-    with open(output_path, "wb") as f:
-        f.write(image_data)
 
 
 def calculate_aspect_ratio(width: int, height: int) -> str:
@@ -220,14 +203,14 @@ Examples:
   python generate_image.py "A wide landscape" -o landscape.png --aspect-ratio 16:9 --resolution 2K
 
   # Use Nano Banana Pro for highest quality
-  python generate_image.py "Professional photo" -m gemini-3-pro-image-preview -o photo.png
+  python generate_image.py "Professional photo" -m gemini-3.1-pro-image-preview -o photo.png
 
   # Edit an existing image
   python generate_image.py "Make the sky purple" --input photo.jpg -o edited.png
 
 Models (Nano Banana family):
   - gemini-3.1-flash-image-preview (default, Nano Banana 2 -- fastest, general use)
-  - gemini-3-pro-image-preview (Nano Banana Pro -- best quality, professional assets)
+  - gemini-3.1-pro-image-preview (Nano Banana Pro -- best quality, professional assets)
 
 Aspect Ratios:
   1:1, 1:4, 1:8, 2:3, 3:2, 3:4, 4:1, 4:3, 4:5, 5:4, 8:1, 9:16, 16:9, 21:9

@@ -11,7 +11,7 @@ This script uses a smart iterative refinement approach:
 Requirements:
     - google-genai>=1.0.0
     - GEMINI_API_KEY environment variable
-    - Python 3.9+
+    - Python 3.10+
 
 Usage:
     python generate_diagram_ai.py "Create a flowchart showing user authentication flow" -o flowchart.png
@@ -21,21 +21,20 @@ Usage:
 """
 
 import argparse
+import json
 import os
 import re
+import shutil
 import sys
 import time
-import json
-import shutil
 from pathlib import Path
-from typing import Optional, Dict, Any, Tuple
-
-from google.genai import types
+from typing import Any, Dict, Optional, Tuple
 
 # Add skills/ to path for common imports
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from common.client import get_client  # noqa: E402
 from common.image_utils import convert_to_png, get_mime_type  # noqa: E402
+from google.genai import types  # noqa: E402
 
 
 class NanoBananaGenerator:
@@ -180,7 +179,7 @@ LAYOUT:
                         return image_data
 
             self._last_error = "No image data in API response"
-            self._log(f"No image found in response")
+            self._log("No image found in response")
             return None
 
         except Exception as e:
@@ -239,7 +238,7 @@ If score < {threshold}, mark as NEEDS_IMPROVEMENT with specific suggestions."""
                 ],
             )
 
-            content = response.text or ""
+            content = getattr(response, "text", None) or ""
 
             # Extract score
             score = 7.5
@@ -396,7 +395,7 @@ Generate a publication-quality technical diagram that meets all the guidelines a
 
             if not needs_improvement:
                 print(f"\nQuality meets {doc_type} threshold ({score} >= {threshold})")
-                print(f"  No further iterations needed!")
+                print("  No further iterations needed!")
                 results["final_image"] = str(iter_path)
                 results["final_score"] = score
                 results["success"] = True
@@ -405,14 +404,14 @@ Generate a publication-quality technical diagram that meets all the guidelines a
                 break
 
             if i == iterations:
-                print(f"\nMaximum iterations reached")
+                print("\nMaximum iterations reached")
                 results["final_image"] = str(iter_path)
                 results["final_score"] = score
                 results["success"] = True
                 break
 
             print(f"\nQuality below threshold ({score} < {threshold})")
-            print(f"Improving prompt based on feedback...")
+            print("Improving prompt based on feedback...")
             current_prompt = self.improve_prompt(user_prompt, critique, i + 1)
 
         # Copy final version to output path
@@ -431,7 +430,7 @@ Generate a publication-quality technical diagram that meets all the guidelines a
         total_elapsed = time.time() - total_start
 
         print(f"\n{'='*60}")
-        print(f"Nano Banana - Generation Complete")
+        print("Nano Banana - Generation Complete")
         print(f"Final Score: {results['final_score']}/10")
         if results["early_stop"]:
             print(f"Iterations Used: {len([r for r in results['iterations'] if r.get('success')])}/{iterations} (early stop)")
@@ -537,7 +536,7 @@ Environment:
             print(f"\nSuccess! Image saved to: {args.output}")
             sys.exit(0)
         else:
-            print(f"\nGeneration failed. Check review log for details.")
+            print("\nGeneration failed. Check review log for details.")
             sys.exit(1)
     except Exception as e:
         print(f"\nError: {str(e)}")

@@ -24,10 +24,10 @@ Usage:
     python generate_video.py "A cat in this art style" -o styled.mp4 --reference style1.png --reference style2.png
 """
 
-import sys
 import argparse
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 from pathlib import Path
@@ -36,9 +36,7 @@ from typing import List, Optional
 # Add skills/ to path for common imports
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from common.client import get_client  # noqa: E402
-
 from google.genai import types  # noqa: E402
-
 
 # ---------------------------------------------------------------------------
 # Constraint validation
@@ -55,10 +53,10 @@ def validate_constraints(
     """Validate Veo 3.1 generation constraints. Exits on violation."""
     errors: List[str] = []
 
-    # 1080p and 4K require duration=8
-    if resolution in ("1080p", "4k") and duration != 8:
+    # 1080p requires duration=8
+    if resolution == "1080p" and duration != 8:
         errors.append(
-            f"Resolution {resolution} requires --duration 8 (got {duration}). "
+            f"Resolution 1080p requires --duration 8 (got {duration}). "
             "Only 720p supports shorter durations."
         )
 
@@ -177,7 +175,7 @@ def generate_video(
         extend: Path to .mp4 video to extend.
         reference_images: Up to 3 reference images for style guidance.
         aspect_ratio: '16:9' or '9:16'.
-        resolution: '720p', '1080p', or '4k'.
+        resolution: '720p' or '1080p'.
         duration: Video duration in seconds (4, 6, or 8).
         include_audio: If True, keep generated audio. Default strips it.
         timeout: Max seconds to wait for generation.
@@ -229,11 +227,25 @@ def generate_video(
         "enhance_prompt": True,
         "person_generation": "allow_adult",
         "aspect_ratio": aspect_ratio,
+        "resolution": resolution,
+        "generate_audio": include_audio,
     }
 
     # Frame interpolation: pass last_frame in config
     if last_frame:
         config_kwargs["last_frame"] = types.Image.from_file(last_frame)
+
+    # Reference images via native SDK support
+    if reference_images:
+        config_kwargs["reference_images"] = [
+            types.VideoGenerationReferenceImage(
+                image=types.Image.from_file(ref_path),
+                reference_type=types.VideoGenerationReferenceType.STYLE
+                if len(reference_images) == 1
+                else types.VideoGenerationReferenceType.ASSET,
+            )
+            for ref_path in reference_images
+        ]
 
     config = types.GenerateVideosConfig(**config_kwargs)
 
@@ -249,18 +261,6 @@ def generate_video(
         gen_kwargs["image"] = types.Image.from_file(input_image)
     elif mode == "extension":
         gen_kwargs["video"] = types.Video.from_file(extend)
-
-    # Reference images — pass as part of the prompt context if provided
-    # The Veo API doesn't have a dedicated reference_images parameter,
-    # so we upload them as files and reference them in the prompt.
-    if reference_images:
-        # Upload reference images and note in prompt
-        ref_note = f" (Use the style and visual elements from the {len(reference_images)} reference image(s) provided.)"
-        gen_kwargs["prompt"] = prompt + ref_note
-        # Upload each reference image as a file the model can see
-        for ref_path in reference_images:
-            ref_file = client.files.upload(file=ref_path)
-            print(f"Uploaded reference: {ref_path} -> {ref_file.name}")
 
     # Start generation
     print("Starting video generation...")
@@ -302,19 +302,15 @@ def generate_video(
     video_obj.save(output_path)
     print(f"Video saved to: {output_path}")
 
-    # Strip audio unless --audio flag is set
+    # Backup audio stripping via ffmpeg (in case generate_audio=False wasn't honored)
     if not include_audio:
         with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmp:
             tmp_path = tmp.name
         try:
             if strip_audio(output_path, tmp_path):
-                # Replace original with stripped version
                 Path(tmp_path).replace(output_path)
-                print("Audio stripped from output.")
-            else:
-                print("Keeping audio in output (ffmpeg unavailable).")
+                print("Audio verified stripped from output.")
         finally:
-            # Clean up temp file if it still exists
             tmp_file = Path(tmp_path)
             if tmp_file.exists():
                 tmp_file.unlink()
@@ -344,7 +340,7 @@ Models:
   veo-3.1-generate-preview        Standard quality
 
 Constraints:
-  - 1080p / 4K require --duration 8
+  - 1080p requires --duration 8
   - Video extension requires --resolution 720p
   - Max 3 --reference images
 
@@ -408,8 +404,8 @@ Examples:
     )
     parser.add_argument(
         "--resolution", type=str, default="720p",
-        choices=["720p", "1080p", "4k"],
-        help="Video resolution (default: 720p)",
+        choices=["720p", "1080p"],
+        help="Video resolution (default: 720p). Only 720p and 1080p supported.",
     )
     parser.add_argument(
         "--duration", type=int, default=8,

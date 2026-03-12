@@ -20,7 +20,7 @@ Generate videos using Google's Veo 3.1 models via the google-genai SDK. Supports
 - Four generation modes from a single script
 - Fast (default) and standard quality models
 - Aspect ratio control (16:9, 9:16)
-- Resolution up to 4K
+- Resolution up to 1080p
 - Configurable duration (4, 6, or 8 seconds)
 - Automatic audio stripping (opt-in to keep)
 - Reference images for style guidance
@@ -100,18 +100,17 @@ python3 ${CLAUDE_SKILL_DIR}/scripts/generate_video.py "A sunset timelapse" -o su
 |------------|-------------------|-------|
 | **720p** (default) | 4, 6, 8 seconds | All durations, required for extension |
 | **1080p** | 8 seconds only | Higher quality, duration locked |
-| **4K** | 8 seconds only | Highest quality, duration locked |
 
 ```bash
 # 720p, 4 seconds (fast preview)
 python3 ${CLAUDE_SKILL_DIR}/scripts/generate_video.py "Quick test" -o test.mp4 --resolution 720p --duration 4
 
-# 4K, must be 8 seconds
-python3 ${CLAUDE_SKILL_DIR}/scripts/generate_video.py "Cinematic landscape" -o landscape.mp4 --resolution 4k --duration 8
+# 1080p, must be 8 seconds
+python3 ${CLAUDE_SKILL_DIR}/scripts/generate_video.py "Cinematic landscape" -o landscape.mp4 --resolution 1080p --duration 8
 ```
 
 **Constraint rules:**
-- `--resolution 1080p` or `--resolution 4k` requires `--duration 8`
+- `--resolution 1080p` requires `--duration 8`
 - `--extend` requires `--resolution 720p`
 - Maximum 3 `--reference` images
 
@@ -156,7 +155,7 @@ python3 ${CLAUDE_SKILL_DIR}/scripts/generate_video.py "A concert crowd cheering"
 | `--extend` | — | Video .mp4 to extend |
 | `--reference` | — | Reference image (repeatable, max 3) |
 | `--aspect-ratio` | `16:9` | `16:9` or `9:16` |
-| `--resolution` | `720p` | `720p`, `1080p`, or `4k` |
+| `--resolution` | `720p` | `720p` or `1080p` |
 | `--duration` | `8` | `4`, `6`, or `8` seconds |
 | `--audio` | off | Keep generated audio |
 | `--timeout` | `360` | Max wait in seconds |
@@ -210,7 +209,7 @@ python3 ${CLAUDE_SKILL_DIR}/scripts/generate_video.py "The clouds slowly drift a
 Set the `GEMINI_API_KEY` environment variable or create a `.env` file. Run `/nano-banana:setup` for help.
 
 ### "Constraint validation failed"
-Check the resolution/duration constraint table above. Common issue: using `--resolution 4k` with `--duration 4`.
+Check the resolution/duration constraint table above. Common issue: using `--resolution 1080p` with `--duration 4`.
 
 ### Generation Timeout
 Default timeout is 360 seconds (6 minutes). Video generation typically takes 1-4 minutes. Increase with `--timeout 600` for complex prompts.

@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.1] — 2026-03-12
+
+### Fixed
+
+- **Video: 4K resolution removed** — SDK only supports 720p and 1080p; 4K was never functional
+- **Video: resolution not passed to API** — `resolution` field now included in `GenerateVideosConfig`
+- **Video: reference images broken** — replaced file upload hack with native `VideoGenerationReferenceImage` SDK type (STYLE for 1, ASSET for 2-3)
+- **Video: audio control via SDK** — added native `generate_audio` flag; ffmpeg kept as backup
+- **Image: stale model ID** — `gemini-3-pro-image-preview` → `gemini-3.1-pro-image-preview` in all docs/examples
+- **Diagram: defensive `response.text` access** — prevents `AttributeError` on non-text responses
+- **Dead code removed** — unused `save_base64_image()` and `import base64` from image skill
+- **Python version** — `requires-python` corrected to `>=3.10` (google-genai requires 3.10+)
+- **Ruff target** — updated from `py38` to `py310`
+- **Lint cleanup** — import sorting, extraneous f-string prefixes
+
+---
+
 ## [3.0.0] — 2026-03-12
 
 ### Breaking Changes

@@ -2,8 +2,8 @@
 """PostToolUse validation hook for nano-banana generation output.
 
 Reads JSON from stdin (Claude Code hook protocol). Validates output from
-generate_image.py and generate_diagram scripts, providing error recovery
-guidance and output file integrity checks.
+generate_image.py, generate_diagram, and generate_video.py scripts, providing
+error recovery guidance and output file integrity checks.
 
 Exit codes:
     0 - Success or non-matching command (silent pass-through)
@@ -17,25 +17,25 @@ import sys
 from typing import List, Optional, Tuple
 
 # Generation script patterns that trigger validation
-GENERATION_PATTERNS: List[str] = ["generate_image.py", "generate_diagram"]
+GENERATION_PATTERNS: List[str] = ["generate_image.py", "generate_diagram", "generate_video.py"]
 
 # Error patterns mapped to recovery guidance
 ERROR_PATTERNS: List[Tuple[str, str]] = [
     (
-        "OPENROUTER_API_KEY not found",
-        "API key not configured. Run /nano-banana:setup to set up your OpenRouter API key.",
+        "GEMINI_API_KEY not found",
+        "API key not configured. Run /nano-banana:setup to set up your Gemini API key.",
     ),
     (
         "API Error (401)",
-        "API key is invalid or expired. Check your key at https://openrouter.ai/keys",
+        "API key is invalid or expired. Check your key at https://aistudio.google.com/apikey",
     ),
     (
         "API Error (403)",
-        "API key lacks permissions. Check your key at https://openrouter.ai/keys",
+        "API key lacks permissions. Check your key at https://aistudio.google.com/apikey",
     ),
     (
         "API Error (429)",
-        "Rate limited by OpenRouter. Wait a moment and retry, or check your account credits at https://openrouter.ai/activity",
+        "Rate limited by Gemini API. Wait a moment and retry, or check your quota at https://aistudio.google.com",
     ),
     (
         "timed out",
@@ -51,20 +51,29 @@ ERROR_PATTERNS: List[Tuple[str, str]] = [
     ),
     (
         "No choices in response",
-        "API returned empty response. Check your OpenRouter account has credits.",
+        "API returned empty response. Check your Gemini API key and quota.",
     ),
     (
         "Generation failed",
-        "Image generation failed. Check the error output above for details.",
+        "Generation failed. Check the error output above for details.",
+    ),
+    (
+        "Video generation requires a paid Gemini API tier",
+        "Video generation (Veo) requires a paid Gemini API plan. See https://aistudio.google.com for pricing.",
+    ),
+    (
+        "Video generation timed out",
+        "Video generation timed out. Videos can take 1-3 minutes. Retry or try a shorter duration.",
     ),
     # Anchored with trailing space to avoid false positives on success messages
     (
         "Error: ",
-        "Image generation failed. Check the error output above for details.",
+        "Generation failed. Check the error output above for details.",
     ),
 ]
 
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
+MP4_FTYP = b"ftyp"
 
 
 def fail(message: str) -> None:
@@ -131,6 +140,20 @@ def validate_output_file(file_path: str, cwd: str) -> Optional[str]:
                 header = f.read(8)
             if header != PNG_MAGIC:
                 return "Output file is not a valid PNG: {}. File may be corrupted.".format(
+                    file_path
+                )
+        except IOError:
+            return "Cannot read output file: {}. Check file permissions.".format(
+                file_path
+            )
+
+    # MP4 header validation (bytes 4-7 must be "ftyp")
+    if file_path.lower().endswith(".mp4"):
+        try:
+            with open(file_path, "rb") as f:
+                header = f.read(8)
+            if header[4:8] != MP4_FTYP:
+                return "Output file is not a valid MP4: {}. File may be corrupted.".format(
                     file_path
                 )
         except IOError:

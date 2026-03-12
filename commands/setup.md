@@ -4,63 +4,52 @@ description: Configure API keys and environment for Nano Banana
 
 # Nano Banana Setup
 
-I'll help you configure Nano Banana for image and diagram generation.
+I'll help you configure Nano Banana for image, diagram, and video generation.
 
 ## Requirements
 
 Nano Banana requires:
-1. **Google Gemini API Key** (preferred) or **OpenRouter API Key** - For accessing AI models
-2. **Python 3.8+** - Uses stdlib only, **no external dependencies required!**
+1. **Google Gemini API Key** - For accessing Gemini image and video models
+2. **Python 3.10+** - Required for `google-genai` SDK
+3. **google-genai SDK** - Install via `uv sync` or `pip install google-genai`
+4. **ffmpeg** (optional) - For stripping audio from generated videos
 
 ## Step 1: Check Current Configuration
 
 Let me check if you already have the required configuration:
 
 ```bash
-# Check for GEMINI_API_KEY (preferred)
+# Check for GEMINI_API_KEY
 if [ -n "$GEMINI_API_KEY" ]; then
-    echo "✅ GEMINI_API_KEY is set (Google direct API - preferred)"
-elif [ -n "$OPENROUTER_API_KEY" ]; then
-    echo "✅ OPENROUTER_API_KEY is set (OpenRouter fallback)"
+    echo "GEMINI_API_KEY is set"
 else
-    echo "❌ No API key found"
+    echo "No GEMINI_API_KEY found"
 fi
+
+# Check for google-genai SDK
+python3 -c "import google.genai" 2>/dev/null && echo "google-genai SDK installed" || echo "google-genai SDK not found — run: uv sync or pip install google-genai"
+
+# Check for ffmpeg (optional, for video audio stripping)
+command -v ffmpeg >/dev/null && echo "ffmpeg available" || echo "ffmpeg not found (optional — needed for stripping audio from videos)"
 ```
 
 ## Step 2: Get Your API Key
 
-### Option 1: Google Gemini API Key (Recommended)
-
-The Google Gemini API is **preferred** because:
-- Free tier available (generous limits)
-- Direct connection (no proxy layer)
-- Most reliable for image generation
+### Google Gemini API Key
 
 1. Go to **https://aistudio.google.com/apikey**
 2. Sign in with your Google account
 3. Click **"Create API Key"**
 4. Copy your API key
 
-### Option 2: OpenRouter API Key (Alternative)
-
-Use OpenRouter if you need access to non-Google models (FLUX, etc.):
-
-1. Go to **https://openrouter.ai/keys**
-2. Sign in or create an account
-3. Click **"Create Key"**
-4. Copy your API key (starts with `sk-or-v1-...`)
-5. Add credits to your account
+**Note:** Video generation (Veo 3.1) requires a **paid** Gemini API tier. Image and diagram generation work on the free tier.
 
 ## Step 3: Configure API Key
 
 Add to your shell profile (`~/.zshrc` or `~/.bashrc`):
 
 ```bash
-# Preferred: Google Gemini direct API (free tier)
 export GEMINI_API_KEY='your-gemini-key-here'
-
-# Alternative: OpenRouter (supports FLUX and other non-Google models)
-# export OPENROUTER_API_KEY='sk-or-v1-your-key-here'
 ```
 
 Then reload:
@@ -74,9 +63,19 @@ echo "GEMINI_API_KEY=your-gemini-key-here" > .env
 echo ".env" >> .gitignore
 ```
 
-## Step 4: Verify Installation
+## Step 4: Install Dependencies
 
-**No dependency installation required!** Nano Banana uses Python stdlib only.
+The `google-genai` SDK is required for all generation tasks:
+
+```bash
+# With uv (recommended)
+uv sync
+
+# Or with pip
+pip install google-genai
+```
+
+## Step 5: Verify Installation
 
 Test that everything works:
 
@@ -94,16 +93,14 @@ If successful, you'll see the provider being used and the saved output path.
 
 | Component | Status |
 |-----------|--------|
-| GEMINI_API_KEY | ✅ Preferred (free tier, direct) |
-| OPENROUTER_API_KEY | ⚡ Alternative (multi-model) |
-| Python 3.8+ | ✅ Installed |
-| External dependencies | ✅ None required! |
-
-**Provider auto-detection:** When both keys are set, Nano Banana prefers the Google direct API. Use `--provider openrouter` to force OpenRouter.
+| GEMINI_API_KEY | Required (free tier for images, paid for video) |
+| google-genai SDK | Required (`uv sync` or `pip install google-genai`) |
+| Python 3.10+ | Required |
+| ffmpeg | Optional (video audio stripping) |
 
 ## .env File Support
 
-Nano Banana reads `.env` files automatically (stdlib-only, no `python-dotenv` needed). Just create a `.env` in your project root:
+Nano Banana reads `.env` files automatically. Just create a `.env` in your project root:
 
 ```bash
 echo "GEMINI_API_KEY=your-key-here" > .env
@@ -115,7 +112,7 @@ The plugin searches for `.env` files in the current directory and up to 5 parent
 ## Troubleshooting
 
 ### "No API key found"
-- Ensure at least one key is set: `echo $GEMINI_API_KEY` or `echo $OPENROUTER_API_KEY`
+- Ensure GEMINI_API_KEY is set: `echo $GEMINI_API_KEY`
 - Or ensure `.env` file exists with the key
 - Restart your terminal after adding to shell profile
 
@@ -126,8 +123,12 @@ chmod +x skills/*/scripts/*.py
 
 ### API Errors
 - Check your API key is correct
-- For Google: check https://aistudio.google.com for quota/usage
-- For OpenRouter: check https://openrouter.ai/activity for usage and errors
+- Check https://aistudio.google.com for quota/usage
+
+### Video Generation Errors
+- Video generation requires a paid Gemini API tier
+- Videos can take 1-3 minutes to generate — be patient
+- If audio stripping fails, install ffmpeg: `brew install ffmpeg` (macOS) or `apt install ffmpeg` (Linux)
 
 ## Next Steps
 
@@ -142,12 +143,10 @@ python3 skills/image/scripts/generate_image.py "A cozy coffee shop interior, war
 
 # Edit an existing image
 python3 skills/image/scripts/generate_image.py "Add rain to the window" --input coffee_shop.png -o rainy_coffee_shop.png
-
-# Force a specific provider
-python3 skills/image/scripts/generate_image.py "A sunset" -o sunset.png --provider google
 ```
 
 See the skill documentation for more examples:
 - `skills/diagram/SKILL.md` - Technical diagram generation
 - `skills/image/SKILL.md` - Image generation and editing
 - `skills/kroki/SKILL.md` - Text-based diagram rendering (27 types via Kroki.io)
+- `skills/video/SKILL.md` - AI video generation with Veo 3.1

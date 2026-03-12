@@ -1,7 +1,7 @@
 {
   "name": "nano-banana",
   "version": "2.0.0",
-  "description": "AI-powered image and diagram generation for Claude Code - uses Nano Banana 2 (Gemini 3.1 Flash Image) for fast generation and Nano Banana Pro (Gemini 3 Pro Image) for professional diagrams with quality review.",
+  "description": "AI-powered image, diagram, and video generation for Claude Code - uses Nano Banana 2 (Gemini 3.1 Flash Image) for fast generation, Nano Banana Pro (Gemini 3 Pro Image) for professional diagrams, and Veo 3.1 for video generation.",
   "author": {
     "name": "Jesper Vang",
     "url": "https://github.com/flight505"
@@ -11,11 +11,13 @@
   "homepage": "https://github.com/flight505/nano-banana",
   "keywords": [
     "image-generation",
+    "video-generation",
     "diagrams",
     "ai",
     "visualization",
-    "openrouter",
     "gemini",
+    "veo",
+    "veo-3.1",
     "kroki",
     "technical-diagrams",
     "image-editing"
@@ -24,6 +26,7 @@
   "skills": [
     "./skills/diagram",
     "./skills/image",
-    "./skills/kroki"
+    "./skills/kroki",
+    "./skills/video"
   ]
 }

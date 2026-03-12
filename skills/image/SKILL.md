@@ -1,6 +1,6 @@
 ---
 name: image
-description: "Generate and edit images using Nano Banana 2 (gemini-3.1-flash-image-preview, fastest) or Nano Banana Pro. Supports aspect ratio and resolution control. Google Gemini API preferred, OpenRouter fallback (FLUX, etc.)."
+description: "Generate and edit images using Nano Banana 2 (gemini-3.1-flash-image-preview, fastest) or Nano Banana Pro. Supports aspect ratio and resolution control via Google GenAI SDK."
 allowed-tools: [Read, Write, Edit, Bash]
 disable-model-invocation: true
 ---
@@ -9,14 +9,14 @@ disable-model-invocation: true
 
 ## Overview
 
-Generate and edit images using state-of-the-art AI models. Perfect for creating visual assets, concept art, illustrations, and editing existing images.
+Generate and edit images using state-of-the-art AI models via the Google GenAI SDK. Perfect for creating visual assets, concept art, illustrations, and editing existing images.
 
 **Key Features:**
-- 🎨 **Multiple Models**: Nano Banana 2 (fast), Nano Banana Pro (quality), FLUX Pro, and more
-- ✏️ **Image Editing**: Modify existing images with natural language
-- 📐 **Aspect Ratio & Resolution**: Control output dimensions (16:9, 4K, etc.)
-- 🚀 **Simple API**: One command to generate or edit
-- 💾 **Automatic Saving**: Handles file formats automatically
+- Multiple Models: Nano Banana 2 (fast), Nano Banana Pro (quality)
+- Image Editing: Modify existing images with natural language
+- Aspect Ratio & Resolution: Control output dimensions (16:9, 4K, etc.)
+- Simple API: One command to generate or edit
+- Automatic Saving: Handles file formats automatically
 
 ## When to Use This Skill
 
@@ -29,35 +29,35 @@ Use this skill when you need:
 - **Creative Content**: Artistic images, abstract visuals
 - **Presentation Graphics**: Visuals for slides and documents
 
-**Note**: For technical diagrams (architecture, flowcharts, ERD), use the **diagram** skill instead—it includes quality review and iteration.
+**Note**: For technical diagrams (architecture, flowcharts, ERD), use the **diagram** skill instead -- it includes quality review and iteration.
 
 ## Quick Start
 
 ```bash
 # Generate a new image
-python3 skills/image/scripts/generate_image.py "A beautiful sunset over mountains with orange and purple sky" -o sunset.png
+python3 ${CLAUDE_SKILL_DIR}/scripts/generate_image.py "A beautiful sunset over mountains with orange and purple sky" -o sunset.png
 
 # Edit an existing image
-python3 skills/image/scripts/generate_image.py "Make the sky more dramatic with storm clouds" --input sunset.png -o dramatic_sunset.png
+python3 ${CLAUDE_SKILL_DIR}/scripts/generate_image.py "Make the sky more dramatic with storm clouds" --input sunset.png -o dramatic_sunset.png
 
-# Use a specific model
-python3 skills/image/scripts/generate_image.py "Abstract geometric art in blue and gold" -m "black-forest-labs/flux.2-pro" -o abstract.png
+# Use Nano Banana Pro for highest quality
+python3 ${CLAUDE_SKILL_DIR}/scripts/generate_image.py "Abstract geometric art in blue and gold" -m gemini-3-pro-image-preview -o abstract.png
 ```
 
 ### Aspect Ratio & Resolution
 
 ```bash
 # Wide cinematic landscape
-python3 skills/image/scripts/generate_image.py "Cinematic mountain vista" -o landscape.png --aspect-ratio 16:9
+python3 ${CLAUDE_SKILL_DIR}/scripts/generate_image.py "Cinematic mountain vista" -o landscape.png --aspect-ratio 16:9
 
 # High-resolution square image
-python3 skills/image/scripts/generate_image.py "Product photo" -o product.png --aspect-ratio 1:1 --resolution 4K
+python3 ${CLAUDE_SKILL_DIR}/scripts/generate_image.py "Product photo" -o product.png --aspect-ratio 1:1 --resolution 4K
 
 # Ultra-wide banner
-python3 skills/image/scripts/generate_image.py "Website hero banner" -o banner.png --aspect-ratio 21:9 --resolution 2K
+python3 ${CLAUDE_SKILL_DIR}/scripts/generate_image.py "Website hero banner" -o banner.png --aspect-ratio 21:9 --resolution 2K
 
 # Use Nano Banana Pro for highest quality
-python3 skills/image/scripts/generate_image.py "Professional headshot" -o headshot.png -m gemini-3-pro-image-preview
+python3 ${CLAUDE_SKILL_DIR}/scripts/generate_image.py "Professional headshot" -o headshot.png -m gemini-3-pro-image-preview
 ```
 
 **Supported aspect ratios:** 1:1, 1:4, 1:8, 2:3, 3:2, 3:4, 4:1, 4:3, 4:5, 5:4, 8:1, 9:16, 16:9, 21:9
@@ -72,7 +72,7 @@ Use `/nano-banana:edit` to modify an existing image, or call the script directly
 /nano-banana:edit sunset.png "Add dramatic storm clouds and lightning"
 
 # Edit via script directly
-python3 skills/image/scripts/generate_image.py "Add dramatic storm clouds" --input sunset.png -o sunset_edit1.png
+python3 ${CLAUDE_SKILL_DIR}/scripts/generate_image.py "Add dramatic storm clouds" --input sunset.png -o sunset_edit1.png
 ```
 
 **When to edit vs. regenerate:**
@@ -83,10 +83,8 @@ python3 skills/image/scripts/generate_image.py "Add dramatic storm clouds" --inp
 
 | Model | ID | Speed | Capabilities | Best For |
 |-------|-----|-------|-------------|----------|
-| **Nano Banana 2** | `gemini-3.1-flash-image-preview` | Flash (fastest) | Generation + Editing | Default — high-volume, general use |
+| **Nano Banana 2** | `gemini-3.1-flash-image-preview` | Flash (fastest) | Generation + Editing | Default -- high-volume, general use |
 | **Nano Banana Pro** | `gemini-3-pro-image-preview` | Pro | Generation + Editing | Professional assets, best quality |
-| **FLUX Pro** | `black-forest-labs/flux.2-pro` | Fast | Generation + Editing | Artistic, OpenRouter only |
-| **FLUX Flex** | `black-forest-labs/flux.2-flex` | Fast | Generation only | Development/testing |
 
 ## Usage Examples
 
@@ -94,65 +92,57 @@ python3 skills/image/scripts/generate_image.py "Add dramatic storm clouds" --inp
 
 ```bash
 # Photorealistic
-python3 generate_image.py "Professional headshot of a business executive in modern office setting" -o headshot.png
+python3 ${CLAUDE_SKILL_DIR}/scripts/generate_image.py "Professional headshot of a business executive in modern office setting" -o headshot.png
 
 # Artistic
-python3 generate_image.py "Watercolor painting of a cozy coffee shop on a rainy day" -o coffee_shop.png
+python3 ${CLAUDE_SKILL_DIR}/scripts/generate_image.py "Watercolor painting of a cozy coffee shop on a rainy day" -o coffee_shop.png
 
 # Abstract
-python3 generate_image.py "Abstract visualization of data flowing through neural networks, blue and cyan colors" -o neural_flow.png
+python3 ${CLAUDE_SKILL_DIR}/scripts/generate_image.py "Abstract visualization of data flowing through neural networks, blue and cyan colors" -o neural_flow.png
 
 # Product
-python3 generate_image.py "Modern minimalist logo for a tech startup called 'Nexus', clean geometric design" -o logo.png
+python3 ${CLAUDE_SKILL_DIR}/scripts/generate_image.py "Modern minimalist logo for a tech startup called 'Nexus', clean geometric design" -o logo.png
 ```
 
 ### Edit Existing Images
 
 ```bash
 # Change colors
-python3 generate_image.py "Change the car color to red" --input car.jpg -o red_car.png
+python3 ${CLAUDE_SKILL_DIR}/scripts/generate_image.py "Change the car color to red" --input car.jpg -o red_car.png
 
 # Add elements
-python3 generate_image.py "Add a rainbow in the sky" --input landscape.jpg -o rainbow_landscape.png
+python3 ${CLAUDE_SKILL_DIR}/scripts/generate_image.py "Add a rainbow in the sky" --input landscape.jpg -o rainbow_landscape.png
 
 # Remove elements
-python3 generate_image.py "Remove the person from the background" --input photo.jpg -o clean_photo.png
+python3 ${CLAUDE_SKILL_DIR}/scripts/generate_image.py "Remove the person from the background" --input photo.jpg -o clean_photo.png
 
 # Style transfer
-python3 generate_image.py "Make this look like a watercolor painting" --input photo.jpg -o watercolor.png
+python3 ${CLAUDE_SKILL_DIR}/scripts/generate_image.py "Make this look like a watercolor painting" --input photo.jpg -o watercolor.png
 ```
 
 ### Specify Output Format
 
 ```bash
 # PNG (default, best for graphics with transparency)
-python3 generate_image.py "Icon of a rocket ship" -o rocket.png
+python3 ${CLAUDE_SKILL_DIR}/scripts/generate_image.py "Icon of a rocket ship" -o rocket.png
 
 # Output to specific directory
-python3 generate_image.py "Banner image" -o assets/images/banner.png
+python3 ${CLAUDE_SKILL_DIR}/scripts/generate_image.py "Banner image" -o assets/images/banner.png
 ```
 
 ## Configuration
 
-### Option 1: Google Gemini API (Recommended)
+### Google Gemini API Key (Required)
 ```bash
 export GEMINI_API_KEY='your_gemini_key_here'
 ```
 Get a key at https://aistudio.google.com/apikey (free tier available).
 
-### Option 2: OpenRouter (Alternative)
-```bash
-export OPENROUTER_API_KEY='your_api_key_here'
-```
-Get a key at https://openrouter.ai/keys. Required for non-Google models (FLUX, etc.).
-
 ### .env File
-Create a `.env` file in your project with either key:
+Create a `.env` file in your project:
 ```
 GEMINI_API_KEY=your_gemini_key_here
 ```
-
-**Auto-detection:** When both keys are set, the Google direct API is preferred. Use `--provider openrouter` to force OpenRouter.
 
 ## Python API
 
@@ -163,7 +153,7 @@ from skills.image.scripts.generate_image import generate_image
 result = generate_image(
     prompt="A futuristic city at night with neon lights",
     output_path="city.png",
-    model="google/gemini-3-pro-image-preview"
+    model="gemini-3-pro-image-preview"
 )
 
 # Edit existing image
@@ -178,31 +168,31 @@ result = generate_image(
 
 ### Be Descriptive
 ```bash
-# ❌ Too vague
+# Too vague
 "A dog"
 
-# ✅ Detailed
+# Detailed
 "A golden retriever puppy playing in autumn leaves, warm afternoon sunlight, shallow depth of field, professional pet photography"
 ```
 
 ### Include Style
 ```bash
-# ✅ Specify artistic style
+# Specify artistic style
 "A mountain landscape in the style of traditional Japanese ink painting, minimalist, black and white with subtle gray tones"
 ```
 
 ### Specify Composition
 ```bash
-# ✅ Include framing
+# Include framing
 "Close-up portrait of an owl, centered composition, soft studio lighting, dark background, sharp focus on the eyes"
 ```
 
 ### For Editing, Be Specific
 ```bash
-# ❌ Vague edit
+# Vague edit
 "Make it better"
 
-# ✅ Specific edit
+# Specific edit
 "Increase the contrast, make the colors more vibrant, and add a subtle vignette effect"
 ```
 
@@ -217,11 +207,11 @@ result = generate_image(
 | **Image Editing** | Yes | Yes |
 | **Best For** | Creative visuals | Architecture, flowcharts, ERD |
 
-**Rule of thumb**: If it's a technical diagram with boxes, arrows, and labels → use `diagram`. If it's a photo, illustration, or artistic image → use `image`.
+**Rule of thumb**: If it's a technical diagram with boxes, arrows, and labels, use `diagram`. If it's a photo, illustration, or artistic image, use `image`.
 
 ## Troubleshooting
 
-### "OPENROUTER_API_KEY not found"
+### "GEMINI_API_KEY not found"
 Set the environment variable or create a `.env` file. See Configuration section.
 
 ### "Image file not found" (for editing)
@@ -237,7 +227,6 @@ Large or complex images may take up to 2 minutes. Timeout is set to 120 seconds.
 
 ## Cost Considerations
 
-- Nano Banana 2 (Flash): Cheapest — free tier available, ~$0.01-0.05 per image
+- Nano Banana 2 (Flash): Cheapest -- free tier available, ~$0.01-0.05 per image
 - Nano Banana Pro: ~$0.02-0.10 per image
-- FLUX Pro: Check OpenRouter for current pricing
 - Image editing: Similar to generation costs

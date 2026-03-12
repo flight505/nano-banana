@@ -3,26 +3,26 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/flight505/nano-banana"><img src="https://img.shields.io/badge/version-2.0.0-blue.svg" alt="Version"></a>
+  <a href="https://github.com/flight505/nano-banana"><img src="https://img.shields.io/badge/version-3.0.0-blue.svg" alt="Version"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License"></a>
   <a href="https://github.com/anthropics/claude-code"><img src="https://img.shields.io/badge/Claude%20Code-Plugin-purple.svg" alt="Claude Code Plugin"></a>
 </p>
 
 <p align="center">
-  <strong>AI-powered image and diagram generation for Claude Code</strong><br>
-  Using Google Gemini API (preferred) or OpenRouter with intelligent quality review
+  <strong>AI-powered image, diagram, and video generation for Claude Code</strong><br>
+  Using Google Gemini API and Veo 3.1 with intelligent quality review
 </p>
 
 ---
 
 ## Features
 
-- **Zero Dependencies** - Uses Python stdlib only, works everywhere (no PEP 668 issues!)
-- **Dual Provider** - Google Gemini API (free tier) with OpenRouter fallback
+- **google-genai SDK** - Single SDK for all Gemini and Veo models
+- **Video Generation** - Veo 3.1 text-to-video, image-to-video, frame interpolation
 - **Smart Iteration** - Only regenerates when quality is below threshold (saves API calls)
 - **Document-Type Aware** - 13 quality presets (journal, architecture, presentation, etc.)
-- **AI Quality Review** - Gemini 3 Pro reviews each diagram generation
-- **Multiple Skills** - Technical diagrams and general images
+- **AI Quality Review** - Gemini 3.1 Pro reviews each diagram generation
+- **Four Skills** - Technical diagrams, general images, video generation, and text-based diagram rendering
 - **Image Editing** - Modify existing images with natural language
 
 ## Quick Start
@@ -33,22 +33,18 @@
 git clone https://github.com/flight505/nano-banana.git
 ```
 
-### 2. Configure API Key
+### 2. Install Dependencies
 
-**Option A: Google Gemini API (Recommended — free tier available)**
+```bash
+uv sync  # or: pip install google-genai
+```
+
+### 3. Configure API Key
 
 Get a key at [Google AI Studio](https://aistudio.google.com/apikey):
 
 ```bash
 export GEMINI_API_KEY='your-gemini-key-here'
-```
-
-**Option B: OpenRouter (for FLUX and other non-Google models)**
-
-Get a key at [OpenRouter](https://openrouter.ai/keys):
-
-```bash
-export OPENROUTER_API_KEY='sk-or-v1-your-key-here'
 ```
 
 Or use a `.env` file in your project:
@@ -57,7 +53,7 @@ Or use a `.env` file in your project:
 echo "GEMINI_API_KEY=your-key-here" > .env
 ```
 
-### 3. Generate!
+### 4. Generate!
 
 ```bash
 # Technical diagram with quality review
@@ -75,6 +71,16 @@ python3 skills/image/scripts/generate_image.py \
 python3 skills/image/scripts/generate_image.py \
     "Add rain to the window" \
     --input coffee_shop.png -o rainy_coffee_shop.png
+
+# Generate a video
+python3 skills/video/scripts/generate_video.py \
+    "A time-lapse of clouds over a mountain" \
+    -o clouds.mp4
+
+# Image-to-video (animate a still image)
+python3 skills/video/scripts/generate_video.py \
+    "Slowly pan across the scene" \
+    --input landscape.png -o animated.mp4
 ```
 
 ## Skills
@@ -112,9 +118,7 @@ python3 skills/image/scripts/generate_image.py "Make the sky purple" --input pho
 
 **Available Models:**
 - `gemini-3.1-flash-image-preview` (default — Nano Banana 2, fastest)
-- `gemini-3-pro-image-preview` (Nano Banana Pro, highest quality)
-- `black-forest-labs/flux.2-pro` (via OpenRouter)
-- `black-forest-labs/flux.2-flex` (via OpenRouter)
+- `gemini-3.1-pro-image-preview` (Nano Banana Pro, highest quality)
 
 **Aspect Ratio & Resolution:**
 ```bash
@@ -144,6 +148,24 @@ python3 skills/kroki/scripts/render_diagram.py --list-types
 
 [Full Kroki Documentation](skills/kroki/SKILL.md)
 
+### Video Skill
+
+Generate videos using Veo 3.1 — text-to-video, image-to-video, frame interpolation, and video extension.
+
+```bash
+# Text-to-video
+python3 skills/video/scripts/generate_video.py "A rocket launching into space" -o launch.mp4
+
+# Image-to-video (animate an image)
+python3 skills/video/scripts/generate_video.py "Zoom into the scene" --input photo.png -o animated.mp4
+```
+
+**Available Models:**
+- `veo-3.1-fast-generate-preview` (default — fast generation)
+- `veo-3.1-generate-preview` (higher quality, slower)
+
+[Full Video Documentation](skills/video/SKILL.md)
+
 ## When to Use Which Skill
 
 | Need | Use |
@@ -153,6 +175,8 @@ python3 skills/kroki/scripts/render_diagram.py --list-types
 | ERD / data models (from description) | `diagram` |
 | Photos / artistic images | `image` |
 | Edit existing photos | `image` |
+| Video demos / animations | `video` |
+| Animate a still image | `video` |
 | Render Mermaid/PlantUML/DOT source | `kroki` |
 | Render D2/C4/Excalidraw source | `kroki` |
 
@@ -162,10 +186,13 @@ python3 skills/kroki/scripts/render_diagram.py --list-types
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `GEMINI_API_KEY` | Preferred | Google Gemini API key (free tier, direct, most reliable) |
-| `OPENROUTER_API_KEY` | Alternative | OpenRouter API key (supports FLUX and non-Google models) |
+| `GEMINI_API_KEY` | Yes | Google Gemini API key ([get one here](https://aistudio.google.com/apikey)) |
 
-**Auto-detection:** When both keys are set, Google Gemini is preferred. Use `--provider openrouter` to force OpenRouter.
+### Dependencies
+
+- **Python 3.10+**
+- **google-genai** SDK: `uv sync` or `pip install google-genai`
+- **ffmpeg** (optional): for video audio stripping
 
 ### Setup Command
 
@@ -178,7 +205,7 @@ Run `/nano-banana:setup` in Claude Code for interactive configuration.
 | Simple diagram (1 iteration) | $0.05-0.15 |
 | Complex diagram (2 iterations) | $0.10-0.30 |
 | Image generation (Gemini) | Free tier / ~$0.02-0.10 |
-| Image generation (FLUX) | $0.05-0.20 |
+| Video generation (Veo 3.1) | ~$0.10-0.50 |
 
 Smart iteration saves costs by stopping early when quality meets threshold.
 
@@ -197,7 +224,8 @@ nano-banana/
 ├── skills/
 │   ├── common/                  # Shared utilities
 │   │   ├── __init__.py
-│   │   ├── env.py               # Unified .env file loading (stdlib)
+│   │   ├── client.py            # google-genai client factory
+│   │   ├── env.py               # Unified .env file loading
 │   │   └── image_utils.py       # PNG conversion, MIME types, base64
 │   ├── diagram/                 # Technical diagram generation
 │   │   ├── SKILL.md
@@ -208,6 +236,10 @@ nano-banana/
 │   │   ├── SKILL.md
 │   │   └── scripts/
 │   │       └── generate_image.py        # Image generation/editing
+│   ├── video/                   # Video generation
+│   │   ├── SKILL.md
+│   │   └── scripts/
+│   │       └── generate_video.py        # Veo 3.1 video generation
 │   └── kroki/                   # Text-based diagram rendering
 │       ├── SKILL.md
 │       └── scripts/
@@ -225,8 +257,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## Acknowledgments
 
-- [Google Gemini](https://deepmind.google/technologies/gemini/) for direct image generation API
-- [OpenRouter](https://openrouter.ai) for multi-model API access
+- [Google Gemini](https://deepmind.google/technologies/gemini/) for image and video generation APIs
 - [Claude Code](https://github.com/anthropics/claude-code) for the plugin platform
 - Inspired by the [Claude Project Planner](https://github.com/flight505/claude-project-planner) plugin
 

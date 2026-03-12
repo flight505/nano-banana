@@ -1,6 +1,6 @@
 # Nano Banana - Claude Code Plugin Instructions
 
-AI-powered image and diagram generation for Claude Code using Nano Banana 2 (fast) and Nano Banana Pro (quality) via Google Gemini API (preferred) or OpenRouter.
+AI-powered image, diagram, and video generation for Claude Code using Nano Banana 2 (fast), Nano Banana Pro (quality), and Veo 3.1 (video) via Google Gemini API.
 
 ## Version Management & Marketplace Sync
 
@@ -40,8 +40,9 @@ AI-powered image and diagram generation for Claude Code using Nano Banana 2 (fas
 
 | Skill | Description | Default Model |
 |-------|-------------|---------------|
-| `diagram` | Generate technical diagrams with AI quality review and smart iteration | Nano Banana Pro (`gemini-3-pro-image-preview`) |
+| `diagram` | Generate technical diagrams with AI quality review and smart iteration | Nano Banana Pro (`gemini-3.1-pro-image-preview`) |
 | `image` | Generate and edit images using AI models | Nano Banana 2 (`gemini-3.1-flash-image-preview`) |
+| `video` | Generate videos using Veo 3.1 | `veo-3.1-fast-generate-preview` |
 | `kroki` | Render text-based diagrams (Mermaid, PlantUML, GraphViz, D2, etc.) to PNG/SVG | Kroki.io (free) |
 
 ## Usage
@@ -63,7 +64,16 @@ python3 skills/image/scripts/generate_image.py "description" -o output.png
 python3 skills/image/scripts/generate_image.py "description" -o output.png --aspect-ratio 16:9 --resolution 2K
 
 # Use Nano Banana Pro for highest quality
-python3 skills/image/scripts/generate_image.py "description" -o output.png -m gemini-3-pro-image-preview
+python3 skills/image/scripts/generate_image.py "description" -o output.png -m gemini-3.1-pro-image-preview
+```
+
+### Generate a Video
+
+```bash
+python3 skills/video/scripts/generate_video.py "description" -o output.mp4
+
+# Image-to-video (animate a still image)
+python3 skills/video/scripts/generate_video.py "description" --input source.png -o output.mp4
 ```
 
 ### Edit an Image or Diagram
@@ -73,34 +83,24 @@ python3 skills/image/scripts/generate_image.py "edit instructions" --input sourc
 python3 skills/diagram/scripts/generate_diagram_ai.py "edit instructions" --input source.png -o output.png --doc-type architecture
 ```
 
-### Force a Specific Provider
-
-```bash
-python3 skills/image/scripts/generate_image.py "description" -o output.png --provider google
-python3 skills/diagram/scripts/generate_diagram.py "description" -o output.png --provider openrouter
-```
-
 ## Requirements
 
-- **GEMINI_API_KEY** (preferred) or **OPENROUTER_API_KEY** environment variable
-- Python 3.8+ (stdlib only — no external dependencies)
-
-## Provider Auto-Detection
-
-1. If `GEMINI_API_KEY` is set → uses Google Gemini API directly (free tier, most reliable)
-2. If only `OPENROUTER_API_KEY` is set → falls back to OpenRouter (supports FLUX and other non-Google models)
-3. Use `--provider google` or `--provider openrouter` to override
+- **GEMINI_API_KEY** environment variable
+- **google-genai** Python SDK (`uv sync` or `pip install google-genai`)
+- Python 3.10+
+- **ffmpeg** (optional, for video audio stripping)
 
 ## When to Use Which Skill
 
 - **Technical diagrams from description** (architecture, flowcharts, ERD) → `diagram` skill
 - **Creative images** (photos, art, illustrations) → `image` skill
+- **Video content** (demos, animations, transitions) → `video` skill
 - **Render diagram source code** (Mermaid, PlantUML, DOT, D2) → `kroki` skill
 
 ## Key Principles
 
-1. **Zero dependencies** — uses Python stdlib only (`urllib.request`), no PEP 668 issues
+1. **google-genai SDK** — single SDK for all Gemini and Veo models
 2. **Smart iteration** — diagram skill only regenerates if quality below threshold
 3. **Document-type aware** — 13 quality presets for different output contexts
-4. **AI review** — Gemini 3 Pro reviews each diagram generation
-5. **Shared utilities** — `skills/common/` provides reusable image and env helpers
+4. **AI review** — Gemini 3.1 Pro reviews each diagram generation
+5. **Shared utilities** — `skills/common/` provides reusable image, env, and client helpers

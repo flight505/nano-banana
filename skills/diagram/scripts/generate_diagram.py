@@ -3,11 +3,11 @@
 Diagram generation using Nano Banana Pro.
 
 Generate any technical diagram by describing it in natural language.
-Nano Banana Pro (gemini-3-pro-image-preview) handles everything automatically
+Nano Banana Pro (gemini-3.1-pro-image-preview) handles everything automatically
 with smart iterative refinement for highest diagram quality.
 
 Smart iteration: Only regenerates if quality is below threshold for your document type.
-Quality review: Uses Gemini 3 Pro for professional evaluation.
+Quality review: Uses Gemini 3.1 Pro for professional evaluation.
 
 Usage:
     # Generate for architecture docs (high quality threshold)
@@ -35,9 +35,9 @@ def main():
         epilog="""
 How it works:
   Simply describe your diagram in natural language.
-  Nano Banana Pro (gemini-3-pro-image-preview) generates it automatically with:
+  Nano Banana Pro (gemini-3.1-pro-image-preview) generates it automatically with:
   - Smart iteration (only regenerates if quality is below threshold)
-  - Quality review by Gemini 3 Pro
+  - Quality review by Gemini 3.1 Pro
   - Document-type aware quality thresholds
   - Publication-ready output
 
@@ -74,8 +74,7 @@ Examples:
   python generate_diagram.py "ERD diagram" -o erd.png -v
 
 Environment Variables:
-  GEMINI_API_KEY        Preferred (free tier, direct)
-  OPENROUTER_API_KEY    Alternative (multi-model)
+  GEMINI_API_KEY        Google Gemini API key (free tier at aistudio.google.com)
         """
     )
 
@@ -91,10 +90,7 @@ Environment Variables:
     parser.add_argument("--iterations", type=int, default=2,
                        help="Maximum refinement iterations (default: 2, max: 2)")
     parser.add_argument("--api-key",
-                       help="API key (or use GEMINI_API_KEY / OPENROUTER_API_KEY env var)")
-    parser.add_argument("--provider", choices=["auto", "google", "openrouter"],
-                       default="auto",
-                       help="API provider (default: auto — prefers Google)")
+                       help="Gemini API key (or use GEMINI_API_KEY env var)")
     parser.add_argument("--input", "-i", type=str,
                        help="Input diagram image to edit (enables edit mode)")
     parser.add_argument("--resolution", type=str,
@@ -107,19 +103,14 @@ Environment Variables:
 
     args = parser.parse_args()
 
-    # Check for API key — respect provider choice
-    if args.provider == "openrouter":
-        api_key = args.api_key or os.getenv("OPENROUTER_API_KEY")
-    elif args.provider == "google":
-        api_key = args.api_key or os.getenv("GEMINI_API_KEY")
-    else:  # auto
-        api_key = args.api_key or os.getenv("GEMINI_API_KEY") or os.getenv("OPENROUTER_API_KEY")
+    # Check for API key
+    api_key = args.api_key or os.getenv("GEMINI_API_KEY")
     if not api_key:
         print("Error: No API key found")
-        print("\nSet one of these environment variables:")
-        print("  export GEMINI_API_KEY='your-key'    # Preferred (free tier)")
-        print("  export OPENROUTER_API_KEY='your-key' # Alternative")
+        print("\nSet the environment variable:")
+        print("  export GEMINI_API_KEY='your-key'")
         print("\nOr use --api-key flag")
+        print("\nGet a free key at: https://aistudio.google.com/apikey")
         sys.exit(1)
 
     # Find AI generation script
@@ -143,9 +134,6 @@ Environment Variables:
 
     if api_key:
         cmd.extend(["--api-key", api_key])
-
-    if args.provider != "auto":
-        cmd.extend(["--provider", args.provider])
 
     if args.input:
         if not os.path.exists(args.input):

@@ -3,7 +3,7 @@
 Diagram generation using Nano Banana Pro.
 
 Generate any technical diagram by describing it in natural language.
-Nano Banana Pro (gemini-3.1-pro-image-preview) handles everything automatically
+Nano Banana Pro (gemini-3-pro-image-preview) handles everything automatically
 with smart iterative refinement for highest diagram quality.
 
 Smart iteration: Only regenerates if quality is below threshold for your document type.
@@ -35,7 +35,7 @@ def main():
         epilog="""
 How it works:
   Simply describe your diagram in natural language.
-  Nano Banana Pro (gemini-3.1-pro-image-preview) generates it automatically with:
+  Nano Banana Pro (gemini-3-pro-image-preview) generates it automatically with:
   - Smart iteration (only regenerates if quality is below threshold)
   - Quality review by Gemini 3.1 Pro
   - Document-type aware quality thresholds

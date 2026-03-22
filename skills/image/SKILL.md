@@ -41,7 +41,7 @@ python3 ${CLAUDE_SKILL_DIR}/scripts/generate_image.py "A beautiful sunset over m
 python3 ${CLAUDE_SKILL_DIR}/scripts/generate_image.py "Make the sky more dramatic with storm clouds" --input sunset.png -o dramatic_sunset.png
 
 # Use Nano Banana Pro for highest quality
-python3 ${CLAUDE_SKILL_DIR}/scripts/generate_image.py "Abstract geometric art in blue and gold" -m gemini-3.1-pro-image-preview -o abstract.png
+python3 ${CLAUDE_SKILL_DIR}/scripts/generate_image.py "Abstract geometric art in blue and gold" -m gemini-3-pro-image-preview -o abstract.png
 ```
 
 ### Aspect Ratio & Resolution
@@ -57,7 +57,7 @@ python3 ${CLAUDE_SKILL_DIR}/scripts/generate_image.py "Product photo" -o product
 python3 ${CLAUDE_SKILL_DIR}/scripts/generate_image.py "Website hero banner" -o banner.png --aspect-ratio 21:9 --resolution 2K
 
 # Use Nano Banana Pro for highest quality
-python3 ${CLAUDE_SKILL_DIR}/scripts/generate_image.py "Professional headshot" -o headshot.png -m gemini-3.1-pro-image-preview
+python3 ${CLAUDE_SKILL_DIR}/scripts/generate_image.py "Professional headshot" -o headshot.png -m gemini-3-pro-image-preview
 ```
 
 **Supported aspect ratios:** 1:1, 1:4, 1:8, 2:3, 3:2, 3:4, 4:1, 4:3, 4:5, 5:4, 8:1, 9:16, 16:9, 21:9
@@ -84,7 +84,7 @@ python3 ${CLAUDE_SKILL_DIR}/scripts/generate_image.py "Add dramatic storm clouds
 | Model | ID | Speed | Capabilities | Best For |
 |-------|-----|-------|-------------|----------|
 | **Nano Banana 2** | `gemini-3.1-flash-image-preview` | Flash (fastest) | Generation + Editing | Default -- high-volume, general use |
-| **Nano Banana Pro** | `gemini-3.1-pro-image-preview` | Pro | Generation + Editing | Professional assets, best quality |
+| **Nano Banana Pro** | `gemini-3-pro-image-preview` | Pro | Generation + Editing | Professional assets, best quality |
 
 ## Usage Examples
 
@@ -153,7 +153,7 @@ from skills.image.scripts.generate_image import generate_image
 result = generate_image(
     prompt="A futuristic city at night with neon lights",
     output_path="city.png",
-    model="gemini-3.1-pro-image-preview"
+    model="gemini-3-pro-image-preview"
 )
 
 # Edit existing image

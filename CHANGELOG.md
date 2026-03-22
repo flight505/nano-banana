@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.2] — 2026-03-22
+
+### Fixed
+
+- **Nano Banana Pro model ID** — `gemini-3.1-pro-image-preview` does not exist in the Google API; corrected to `gemini-3-pro-image-preview` across all scripts, docs, and skill files. The v3.0.1 migration incorrectly assumed the Pro image model got a 3.1 version (only the text model and Flash image model did). Verified against official Google docs (2026-03-21).
+
+---
+
 ## [3.0.1] — 2026-03-12
 
 ### Fixed

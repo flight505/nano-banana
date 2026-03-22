@@ -1,6 +1,6 @@
 # Nano Banana — Architecture
 
-**Version:** 3.0.1
+**Version:** 3.0.2
 **Repository:** https://github.com/flight505/nano-banana
 **Author:** flight505 (Jesper Vang)
 
@@ -27,7 +27,7 @@ All skills now use the `google-genai` Python SDK instead of raw `urllib.request`
 | Name | Model ID | Speed | Use Case |
 |------|----------|-------|----------|
 | **Nano Banana 2** | `gemini-3.1-flash-image-preview` | Flash (fastest) | High-volume, general use (image skill default) |
-| **Nano Banana Pro** | `gemini-3.1-pro-image-preview` | Pro | Professional assets, best quality (diagram skill default) |
+| **Nano Banana Pro** | `gemini-3-pro-image-preview` | Pro | Professional assets, best quality (diagram skill default) |
 | **Veo 3.1 Fast** | `veo-3.1-fast-generate-preview` | Fast | Video generation (video skill default) |
 | **Veo 3.1** | `veo-3.1-generate-preview` | Standard | High-quality video generation |
 | **Review** | `gemini-3.1-pro-preview` | Pro | AI quality review (diagram skill) |
@@ -237,7 +237,7 @@ For diagram generation with output path `diagram.png`:
 - **Fix:** Removed unsupported 4K video resolution (SDK only supports 720p/1080p)
 - **Fix:** Reference images use native `VideoGenerationReferenceImage` SDK type
 - **Fix:** Native `generate_audio` flag added (ffmpeg kept as backup)
-- **Fix:** Stale model ID `gemini-3-pro-image-preview` → `gemini-3.1-pro-image-preview`
+- **Fix:** Stale model ID `gemini-3-pro-image-preview` → `gemini-3-pro-image-preview`
 - **Fix:** Defensive `response.text` access in diagram review
 - **Fix:** `requires-python` corrected to `>=3.10`
 - Removed dead code (`save_base64_image`, `import base64`)
@@ -250,7 +250,7 @@ For diagram generation with output path `diagram.png`:
 - **Video generation skill** — Veo 3.1 text-to-video, image-to-video, frame interpolation, video extension
 - **Shared client factory** — `skills/common/client.py` for google-genai SDK
 - Default image model: `gemini-3.1-flash-image-preview`
-- Default diagram model: `gemini-3.1-pro-image-preview`
+- Default diagram model: `gemini-3-pro-image-preview`
 - ffmpeg audio stripping for generated videos
 
 ### v2.0.0 (2026-03-02)

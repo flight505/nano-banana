@@ -121,7 +121,7 @@ LAYOUT:
         self._last_error = None
 
         self.client = get_client(api_key)
-        self.image_model = "gemini-3.1-pro-image-preview"
+        self.image_model = "gemini-3-pro-image-preview"
         self.review_model = "gemini-3.1-pro-preview"
 
         self._log(f"Image model: {self.image_model}")
@@ -476,7 +476,7 @@ Document Types (quality thresholds):
   default       7.5/10 - General purpose
 
 Model:
-  Diagrams use Nano Banana Pro (gemini-3.1-pro-image-preview) for highest quality.
+  Diagrams use Nano Banana Pro (gemini-3-pro-image-preview) for highest quality.
   Quality review uses Gemini 3.1 Pro (gemini-3.1-pro-preview).
 
 Resolutions:

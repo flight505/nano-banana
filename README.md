@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/flight505/nano-banana"><img src="https://img.shields.io/badge/version-3.0.1-blue.svg" alt="Version"></a>
+  <a href="https://github.com/flight505/nano-banana"><img src="https://img.shields.io/badge/version-3.0.2-blue.svg" alt="Version"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License"></a>
   <a href="https://github.com/anthropics/claude-code"><img src="https://img.shields.io/badge/Claude%20Code-Plugin-purple.svg" alt="Claude Code Plugin"></a>
 </p>
@@ -118,7 +118,7 @@ python3 skills/image/scripts/generate_image.py "Make the sky purple" --input pho
 
 **Available Models:**
 - `gemini-3.1-flash-image-preview` (default — Nano Banana 2, fastest)
-- `gemini-3.1-pro-image-preview` (Nano Banana Pro, highest quality)
+- `gemini-3-pro-image-preview` (Nano Banana Pro, highest quality)
 
 **Aspect Ratio & Resolution:**
 ```bash

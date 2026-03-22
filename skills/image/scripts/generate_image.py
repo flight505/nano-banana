@@ -6,7 +6,7 @@ Uses the google-genai SDK for Google Gemini API access.
 
 Models:
 - gemini-3.1-flash-image-preview (default - Nano Banana 2, fastest)
-- gemini-3.1-pro-image-preview (Nano Banana Pro, highest quality)
+- gemini-3-pro-image-preview (Nano Banana Pro, highest quality)
 
 Usage:
     # Generate a new image
@@ -19,7 +19,7 @@ Usage:
     python generate_image.py "Make the sky purple" --input photo.jpg -o edited.png
 
     # Use Nano Banana Pro for highest quality
-    python generate_image.py "Professional headshot" -m gemini-3.1-pro-image-preview -o headshot.png
+    python generate_image.py "Professional headshot" -m gemini-3-pro-image-preview -o headshot.png
 """
 
 import argparse
@@ -203,14 +203,14 @@ Examples:
   python generate_image.py "A wide landscape" -o landscape.png --aspect-ratio 16:9 --resolution 2K
 
   # Use Nano Banana Pro for highest quality
-  python generate_image.py "Professional photo" -m gemini-3.1-pro-image-preview -o photo.png
+  python generate_image.py "Professional photo" -m gemini-3-pro-image-preview -o photo.png
 
   # Edit an existing image
   python generate_image.py "Make the sky purple" --input photo.jpg -o edited.png
 
 Models (Nano Banana family):
   - gemini-3.1-flash-image-preview (default, Nano Banana 2 -- fastest, general use)
-  - gemini-3.1-pro-image-preview (Nano Banana Pro -- best quality, professional assets)
+  - gemini-3-pro-image-preview (Nano Banana Pro -- best quality, professional assets)
 
 Aspect Ratios:
   1:1, 1:4, 1:8, 2:3, 3:2, 3:4, 4:1, 4:3, 4:5, 5:4, 8:1, 9:16, 16:9, 21:9

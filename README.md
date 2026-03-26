@@ -22,7 +22,8 @@
 - **Smart Iteration** - Only regenerates when quality is below threshold (saves API calls)
 - **Document-Type Aware** - 13 quality presets (journal, architecture, presentation, etc.)
 - **AI Quality Review** - Gemini 3.1 Pro reviews each diagram generation
-- **Four Skills** - Technical diagrams, general images, video generation, and text-based diagram rendering
+- **Five Skills** - Technical diagrams, visual abstracts, general images, video generation, and text-based rendering
+- **Visual Abstracts** - Nature-quality scientific figures with visual metaphors and isometric depth
 - **Image Editing** - Modify existing images with natural language
 
 ## Quick Start

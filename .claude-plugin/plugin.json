@@ -20,13 +20,16 @@
     "veo-3.1",
     "kroki",
     "technical-diagrams",
-    "image-editing"
+    "image-editing",
+    "visual-abstracts",
+    "scientific-figures"
   ],
   "commands": "./commands",
   "skills": [
     "./skills/diagram",
     "./skills/image",
     "./skills/kroki",
-    "./skills/video"
+    "./skills/video",
+    "./skills/visual-abstract"
   ]
 }

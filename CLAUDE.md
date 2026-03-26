@@ -41,6 +41,7 @@ AI-powered image, diagram, and video generation for Claude Code using Nano Banan
 | Skill | Description | Default Model |
 |-------|-------------|---------------|
 | `diagram` | Generate technical diagrams with AI quality review and smart iteration | Nano Banana Pro (`gemini-3-pro-image-preview`) |
+| `visual-abstract` | Create Nature-quality scientific figures with visual metaphors and isometric depth | Nano Banana Pro (`gemini-3-pro-image-preview`) |
 | `image` | Generate and edit images using AI models | Nano Banana 2 (`gemini-3.1-flash-image-preview`) |
 | `video` | Generate videos using Veo 3.1 | `veo-3.1-fast-generate-preview` |
 | `kroki` | Render text-based diagrams (Mermaid, PlantUML, GraphViz, D2, etc.) to PNG/SVG | Kroki.io (free) |
@@ -93,6 +94,7 @@ python3 skills/diagram/scripts/generate_diagram_ai.py "edit instructions" --inpu
 ## When to Use Which Skill
 
 - **Technical diagrams from description** (architecture, flowcharts, ERD) → `diagram` skill
+- **Publication-quality scientific figures** (visual metaphors, README heroes, Nature-style) → `visual-abstract` skill
 - **Creative images** (photos, art, illustrations) → `image` skill
 - **Video content** (demos, animations, transitions) → `video` skill
 - **Render diagram source code** (Mermaid, PlantUML, DOT, D2) → `kroki` skill

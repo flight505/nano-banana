@@ -1,6 +1,6 @@
 ---
 name: diagram
-description: "Generate publication-quality technical diagrams using Nano Banana Pro (gemini-3-pro-image-preview) with AI-powered quality review. Smart iteration only regenerates when quality is below threshold. Supports resolution control (512px-4K)."
+description: "Generate publication-quality technical diagrams using Nano Banana Pro (gemini-3-pro-image-preview) with AI-powered quality review. Smart iteration only regenerates when quality is below threshold. Supports style presets (technical, visual-abstract, minimal), aspect ratio, and resolution control (512-4K)."
 allowed-tools: [Read, Write, Edit, Bash]
 disable-model-invocation: true
 ---
@@ -54,7 +54,7 @@ Use `/nano-banana:edit` to modify an existing diagram, or call the script direct
 /nano-banana:edit architecture.png "Add a Redis cache layer between the API and database"
 
 # Edit via script directly
-python3 ${CLAUDE_SKILL_DIR}/scripts/generate_diagram_ai.py "Add Redis cache layer" --input architecture.png -o architecture_edit1.png --doc-type architecture
+python3 ${CLAUDE_SKILL_DIR}/scripts/generate_diagram.py "Add Redis cache layer" --input architecture.png -o architecture_edit1.png --doc-type architecture
 ```
 
 **When to edit vs. regenerate:**
@@ -140,8 +140,8 @@ python3 ${CLAUDE_SKILL_DIR}/scripts/generate_diagram.py "C4 Container diagram fo
    - Layout and Composition (0-2 pts)
    - Professional Appearance (0-2 pts)
 3. **Decision**: If score >= threshold -> Done! If score < threshold -> Iterate
-4. **Improvement**: Feedback is incorporated into an improved prompt
-5. **Regeneration**: New diagram generated with improvements (max 2 iterations)
+4. **Improvement**: Critique is sent back into the multi-turn chat (model retains context)
+5. **Regeneration**: Model refines its own output with context (max 2 iterations)
 
 ## Output Files
 
@@ -194,9 +194,9 @@ GEMINI_API_KEY=your_gemini_key_here
 ## Python API
 
 ```python
-from skills.diagram.scripts.generate_diagram_ai import NanoBananaGenerator
+from skills.diagram.scripts.generate_diagram import NanoBananaGenerator
 
-generator = NanoBananaGenerator(verbose=True)
+generator = NanoBananaGenerator(verbose=True, style="technical")
 results = generator.generate_iterative(
     user_prompt="Kubernetes cluster architecture with ingress, services, and pods",
     output_path="k8s_arch.png",

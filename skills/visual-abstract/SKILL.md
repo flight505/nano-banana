@@ -31,14 +31,15 @@ Use the `diagram` skill for standard technical documentation. Use this skill whe
 ## Quick Start
 
 ```bash
-python3 ${CLAUDE_SKILL_DIR}/../diagram/scripts/generate_diagram_ai.py \
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/diagram/scripts/generate_diagram.py \
   "<your visual-abstract prompt>" \
   -o visual-abstract.png \
+  --style visual-abstract \
   --doc-type journal \
   --resolution 2K
 ```
 
-The `--doc-type journal` sets the quality threshold to 8.5/10 — the highest standard. The generation engine iterates up to twice to meet this bar.
+The `--style visual-abstract` sends dark-background, glow, and metaphor directives via `system_instruction` — separated from your content prompt. The `--doc-type journal` sets the quality threshold to 8.5/10. The generation engine iterates up to twice to meet this bar.
 
 ## The Metaphor Translation Process
 
@@ -281,10 +282,11 @@ elements.
 To modify an existing visual abstract:
 
 ```bash
-python3 ${CLAUDE_SKILL_DIR}/../diagram/scripts/generate_diagram_ai.py \
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/diagram/scripts/generate_diagram.py \
   "Add a monitoring layer showing real-time metrics as oscilloscope traces" \
   --input existing-abstract.png \
   -o existing-abstract-v2.png \
+  --style visual-abstract \
   --doc-type journal
 ```
 
@@ -301,7 +303,7 @@ Or use the command: `/nano-banana:edit existing-abstract.png "Add monitoring tra
 
 ## Gotchas
 
-- **DIAGRAM_GUIDELINES conflict**: The generation script prepends default guidelines specifying white backgrounds. Your detailed visual-abstract prompt overrides these. Be specific enough that the model follows your aesthetic.
+- **Always pass `--style visual-abstract`**: This sends dark-background and glow directives via `system_instruction`, cleanly separated from your content prompt. Without it, you get the default white-background technical style.
 - **Spelling artifacts**: AI-generated text in images often has minor character substitutions (e.g., "3.4MB" may render as "S.4MB"). Keep labels short and essential. The reviewer catches severe cases.
 - **Iteration 2 is key**: First iterations score 6-7.5 due to spelling/layout issues. The review-and-iterate loop typically pushes to 9+. Don't set `--iterations 1`.
 - **Timeout**: Complex prompts with many elements may need `--timeout 180`.

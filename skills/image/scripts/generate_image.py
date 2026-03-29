@@ -94,7 +94,7 @@ def generate_image(
         input_image: Path to an input image for editing (optional)
         timeout: Request timeout in seconds (default: 120)
         aspect_ratio: Image aspect ratio (e.g. "16:9", "1:1", "4:3")
-        resolution: Image resolution (512px, 1K, 2K, 4K)
+        resolution: Image resolution (512, 1K, 2K, 4K)
 
     Returns:
         dict: Summary with keys 'output_path', 'model', 'elapsed', and optionally 'text'
@@ -216,7 +216,7 @@ Aspect Ratios:
   1:1, 1:4, 1:8, 2:3, 3:2, 3:4, 4:1, 4:3, 4:5, 5:4, 8:1, 9:16, 16:9, 21:9
 
 Resolutions:
-  512px, 1K, 2K, 4K
+  512, 1K, 2K, 4K
 
 Environment:
   GEMINI_API_KEY        Google Gemini API key (free tier available)
@@ -258,8 +258,8 @@ Environment:
     parser.add_argument(
         "--resolution",
         type=str,
-        choices=["512px", "1K", "2K", "4K"],
-        help="Image resolution (512px, 1K, 2K, 4K)",
+        choices=["512", "1K", "2K", "4K"],
+        help="Image resolution (512, 1K, 2K, 4K)",
     )
     parser.add_argument(
         "--timeout", type=int, default=120, help="Request timeout in seconds (default: 120)"

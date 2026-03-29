@@ -81,7 +81,7 @@ Test that everything works:
 
 ```bash
 # Test diagram generation
-python3 skills/diagram/scripts/generate_diagram_ai.py "Simple flowchart with start, process, and end boxes" -o test_diagram.png --doc-type presentation -v
+python3 skills/diagram/scripts/generate_diagram.py "Simple flowchart with start, process, and end boxes" -o test_diagram.png --doc-type presentation -v
 
 # Test image generation
 python3 skills/image/scripts/generate_image.py "A simple blue square" -o test_image.png
@@ -136,7 +136,7 @@ You're all set! Try these commands:
 
 ```bash
 # Generate an architecture diagram
-python3 skills/diagram/scripts/generate_diagram_ai.py "Microservices architecture with 3 services and a database" -o architecture.png --doc-type architecture
+python3 skills/diagram/scripts/generate_diagram.py "Microservices architecture with 3 services and a database" -o architecture.png --doc-type architecture
 
 # Generate a creative image
 python3 skills/image/scripts/generate_image.py "A cozy coffee shop interior, warm lighting" -o coffee_shop.png

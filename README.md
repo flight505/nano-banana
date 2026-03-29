@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/flight505/nano-banana"><img src="https://img.shields.io/badge/version-3.0.2-blue.svg" alt="Version"></a>
+  <a href="https://github.com/flight505/nano-banana"><img src="https://img.shields.io/badge/version-3.1.0-blue.svg" alt="Version"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License"></a>
   <a href="https://github.com/anthropics/claude-code"><img src="https://img.shields.io/badge/Claude%20Code-Plugin-purple.svg" alt="Claude Code Plugin"></a>
 </p>
@@ -17,10 +17,12 @@
 
 ## Features
 
+- **Style Presets** - `--style technical|visual-abstract|minimal` via `system_instruction` — aesthetics separated from content
+- **Multi-Turn Chat** - Iterative refinement retains context via `client.chats.create()`
 - **google-genai SDK** - Single SDK for all Gemini and Veo models
 - **Video Generation** - Veo 3.1 text-to-video, image-to-video, frame interpolation
 - **Smart Iteration** - Only regenerates when quality is below threshold (saves API calls)
-- **Document-Type Aware** - 13 quality presets (journal, architecture, presentation, etc.)
+- **Document-Type Aware** - 13 quality thresholds (journal, architecture, presentation, etc.)
 - **AI Quality Review** - Gemini 3.1 Pro reviews each diagram generation
 - **Five Skills** - Technical diagrams, visual abstracts, general images, video generation, and text-based rendering
 - **Visual Abstracts** - Nature-quality scientific figures with visual metaphors and isometric depth
@@ -88,10 +90,17 @@ python3 skills/video/scripts/generate_video.py \
 
 ### Diagram Skill
 
-Generate publication-quality technical diagrams with AI quality review.
+Generate publication-quality technical diagrams with AI quality review and style presets.
 
 ```bash
+# Standard technical diagram
 python3 skills/diagram/scripts/generate_diagram.py "User authentication flow" -o auth.png --doc-type architecture
+
+# Visual abstract with dark background and glow
+python3 skills/diagram/scripts/generate_diagram.py "API gateway as routing prism" -o visual.png --style visual-abstract --doc-type journal
+
+# Wide diagram with aspect ratio
+python3 skills/diagram/scripts/generate_diagram.py "System overview" -o overview.png --aspect-ratio 16:9
 ```
 
 **Document Types:**
@@ -179,6 +188,8 @@ python3 skills/video/scripts/generate_video.py "Zoom into the scene" --input pho
 | Video demos / animations | `video` |
 | Animate a still image | `video` |
 | Render Mermaid/PlantUML/DOT source | `kroki` |
+| Nature-quality scientific figures | `visual-abstract` |
+| README hero images with metaphors | `visual-abstract` |
 | Render D2/C4/Excalidraw source | `kroki` |
 
 ## Configuration
@@ -227,12 +238,12 @@ nano-banana/
 │   │   ├── __init__.py
 │   │   ├── client.py            # google-genai client factory
 │   │   ├── env.py               # Unified .env file loading
-│   │   └── image_utils.py       # PNG conversion, MIME types, base64
+│   │   ├── image_utils.py       # PNG conversion, MIME types
+│   │   └── presets.py           # Style presets (technical, visual-abstract, minimal)
 │   ├── diagram/                 # Technical diagram generation
 │   │   ├── SKILL.md
 │   │   └── scripts/
-│   │       ├── generate_diagram.py      # CLI wrapper
-│   │       └── generate_diagram_ai.py   # AI generation + review logic
+│   │       └── generate_diagram.py      # NanoBananaGenerator class
 │   ├── image/                   # General image generation
 │   │   ├── SKILL.md
 │   │   └── scripts/
@@ -241,10 +252,12 @@ nano-banana/
 │   │   ├── SKILL.md
 │   │   └── scripts/
 │   │       └── generate_video.py        # Veo 3.1 video generation
-│   └── kroki/                   # Text-based diagram rendering
-│       ├── SKILL.md
-│       └── scripts/
-│           └── render_diagram.py        # Kroki.io rendering (27 types)
+│   ├── kroki/                   # Text-based diagram rendering
+│   │   ├── SKILL.md
+│   │   └── scripts/
+│   │       └── render_diagram.py        # Kroki.io rendering (27 types)
+│   └── visual-abstract/         # Publication-quality scientific figures
+│       └── SKILL.md
 ├── ARCHITECTURE.md              # Technical architecture documentation
 ├── CHANGELOG.md                 # Version history
 ├── CLAUDE.md                    # Developer instructions

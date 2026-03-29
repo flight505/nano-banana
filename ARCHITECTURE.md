@@ -1,6 +1,6 @@
 # Nano Banana — Architecture
 
-**Version:** 3.0.2
+**Version:** 3.1.0
 **Repository:** https://github.com/flight505/nano-banana
 **Author:** flight505 (Jesper Vang)
 
@@ -12,7 +12,7 @@
 2. **Smart Iteration** — Threshold-based regeneration, not fixed iteration count
 3. **Document-Type Awareness** — 13 quality presets for different output contexts
 4. **Single Provider** — Google Gemini API only (no fallback chain)
-5. **Explicit Control** — Skills use `disable-model-invocation: true` to prevent unintended generation
+5. **Explicit Control** — Generation skills use `disable-model-invocation: true` to prevent unintended generation; prompt-crafting skills (visual-abstract) use `false` to allow Claude to read the codebase and compose metaphor-rich prompts
 
 ---
 
@@ -40,34 +40,39 @@ All skills now use the `google-genai` Python SDK instead of raw `urllib.request`
 - **Video generation:** `client.models.generate_videos()` with Veo 3.1 models
 - **Image config:** `generationConfig.imageConfig: { aspectRatio, imageSize }`
 - **Aspect ratios:** 1:1, 1:4, 1:8, 2:3, 3:2, 3:4, 4:1, 4:3, 4:5, 5:4, 8:1, 9:16, 16:9, 21:9
-- **Image sizes:** 512px, 1K, 2K, 4K
+- **Image sizes:** 512, 1K, 2K, 4K
 - **JPEG handling:** API may return JPEG for `.png` requests — auto-converted via `convert_to_png()`
 
 ---
 
-## Four-Skill System
+## Five-Skill System
 
 ```
 skills/
-├── diagram/     → AI-generated technical diagrams with quality review + iteration
-├── image/       → General image generation and editing
-├── video/       → Veo 3.1 text-to-video, image-to-video, frame interpolation, video extension
-└── kroki/       → Render text-based diagrams (27 types) to PNG/SVG via Kroki.io
+├── diagram/          → AI-generated technical diagrams with quality review + iteration
+├── visual-abstract/  → Nature-quality scientific figures with visual metaphors and isometric depth
+├── image/            → General image generation and editing
+├── video/            → Veo 3.1 text-to-video, image-to-video, frame interpolation, video extension
+└── kroki/            → Render text-based diagrams (27 types) to PNG/SVG via Kroki.io
 ```
 
 ### Diagram Skill — Smart Iteration
 
-**Core logic:** `skills/diagram/scripts/generate_diagram_ai.py` (`NanoBananaGenerator` class)
+**Core logic:** `skills/diagram/scripts/generate_diagram.py` (`NanoBananaGenerator` class)
+
+**Style presets:** Style directives are sent via `system_instruction` on `GenerateContentConfig`, not concatenated into the user prompt. Presets are defined in `skills/common/presets.py` and selected via `--style` flag (default: `technical`).
+
+**Multi-turn chat:** Iterative refinement uses `client.chats.create()` so the generation model retains context across iterations. Critiques are sent as follow-up messages, not reconstructed prompts.
 
 ```
-User prompt (+ optional --input image)
+system_instruction ← style preset (technical | visual-abstract | minimal)
     ↓
-Generate via Gemini API (image + text modalities)
+User prompt → chat.send_message() → Generate via Gemini API
     ↓
-AI Quality Review (5 criteria, 0-2 pts each = 10 total)
+AI Quality Review (5 criteria, 0-2 pts each = 10 total, separate model)
     ↓
 Score ≥ threshold? → Save and exit (early stop)
-Score < threshold? → Build improved prompt from critique → Regenerate (max 2 iterations)
+Score < threshold? → chat.send_message(critique) → Refine with context (max 2 iterations)
 ```
 
 **Quality criteria:** Technical Accuracy, Clarity/Readability, Label Quality, Layout/Composition, Professional Appearance
@@ -112,6 +117,15 @@ Score < threshold? → Build improved prompt from critique → Regenerate (max 2
 - Supports self-hosted Kroki via `--server`
 - Only triggers when user explicitly asks for text-based diagram rendering
 
+### Visual Abstract Skill
+
+**Core logic:** Prompt-only skill — no scripts of its own. Delegates to `skills/diagram/scripts/generate_diagram.py` with `--doc-type journal` (8.5/10 threshold).
+
+- `disable-model-invocation: false` — Claude reads the codebase, identifies key concepts, maps each to a visual metaphor, then crafts a detailed prompt (~1500 words) before calling the generation script
+- Metaphor vocabulary table translates technical concepts (cache, queue, API gateway, etc.) into physical analogies (crystal buffer, conveyor belt, routing prism)
+- Composition rules: dark background (#0d1117), isometric perspective, color semantics, integrated labels
+- Spatial layouts: isometric exploded view, circular lifecycle, cross-section, constellation, flow
+
 ---
 
 ## Shared Utilities (`skills/common/`)
@@ -130,7 +144,6 @@ Shared client factory used by image, diagram, and video skills. Loads API key fr
 |----------|---------|
 | `convert_to_png(data)` | Converts image bytes to PNG (PIL → sips → pass-through fallback) |
 | `get_mime_type(path)` | Returns MIME type from file extension |
-| `image_to_base64_url(path)` | Returns `data:{mime};base64,...` URI for a file |
 | `MIME_TYPES` | Canonical extension → MIME type mapping |
 
 ### `env.py`
@@ -139,7 +152,15 @@ Shared client factory used by image, diagram, and video skills. Loads API key fr
 |----------|---------|
 | `load_env_value(key)` | Searches `.env` files in cwd + up to 5 parent directories (stdlib only) |
 
-These replace previously duplicated code across `generate_diagram_ai.py` and `generate_image.py`.
+### `presets.py`
+
+| Symbol | Purpose |
+|--------|---------|
+| `STYLE_PRESETS` | Dict mapping preset name → `{"system_instruction": "..."}` |
+| `DEFAULT_STYLE` | Default preset name (`"technical"`) |
+| `get_preset(name)` | Returns preset dict, raises `ValueError` for unknown names |
+
+Three built-in presets: `technical` (white background, accessible), `visual-abstract` (dark background, glow, metaphors), `minimal` (white, thin lines). Presets are sent via `GenerateContentConfig.system_instruction`, not concatenated into user prompts.
 
 ---
 
@@ -190,12 +211,12 @@ nano-banana/
 │   │   ├── __init__.py              # Exports shared utilities
 │   │   ├── client.py                # google-genai client factory
 │   │   ├── env.py                   # Unified .env loading (stdlib)
-│   │   └── image_utils.py           # PNG conversion, MIME types, base64
+│   │   ├── image_utils.py           # PNG conversion, MIME types
+│   │   └── presets.py               # Style presets (system_instruction per aesthetic)
 │   ├── diagram/
 │   │   ├── SKILL.md                 # Diagram skill documentation
 │   │   └── scripts/
-│   │       ├── generate_diagram.py      # CLI wrapper (passes args through)
-│   │       └── generate_diagram_ai.py   # NanoBananaGenerator class
+│   │       └── generate_diagram.py      # NanoBananaGenerator class
 │   ├── image/
 │   │   ├── SKILL.md                 # Image skill documentation
 │   │   └── scripts/
@@ -204,10 +225,12 @@ nano-banana/
 │   │   ├── SKILL.md                 # Video skill documentation
 │   │   └── scripts/
 │   │       └── generate_video.py        # Veo 3.1 video generation
-│   └── kroki/
-│       ├── SKILL.md                 # Kroki skill documentation
-│       └── scripts/
-│           └── render_diagram.py        # Kroki.io rendering (27 types)
+│   ├── kroki/
+│   │   ├── SKILL.md                 # Kroki skill documentation
+│   │   └── scripts/
+│   │       └── render_diagram.py        # Kroki.io rendering (27 types)
+│   └── visual-abstract/
+│       └── SKILL.md                 # Visual abstract prompt guide (no scripts)
 ├── ARCHITECTURE.md                  # This file
 ├── CHANGELOG.md                     # Version history
 ├── CLAUDE.md                        # Developer instructions
@@ -231,7 +254,18 @@ For diagram generation with output path `diagram.png`:
 
 ## Version History
 
-### v3.0.1 (2026-03-12) — Current
+### v3.1.0 (2026-03-28) — Current
+
+- **Style preset system** — `system_instruction` separates aesthetics from content. Three presets: `technical`, `visual-abstract`, `minimal`. Selected via `--style` flag.
+- **Multi-turn chat** — iterative refinement uses `client.chats.create()` so the model retains context across iterations instead of prompt reconstruction
+- **Visual abstract skill** — Nature-quality scientific figures using visual metaphors, isometric depth, and physical analogies
+- **`--aspect-ratio` flag** on diagram script (14 ratios from the Gemini API)
+- **Deleted subprocess shim** — `generate_diagram.py` (wrapper) removed; `generate_diagram_ai.py` renamed to `generate_diagram.py`
+- **`DIAGRAM_GUIDELINES` removed** from class — now lives in `skills/common/presets.py` as the `"technical"` preset
+- **Dead code removed** — `image_to_base64_url` (unused since v3.0.0 OpenRouter removal)
+- **Fix:** `--resolution 512px` → `--resolution 512` (SDK `ImageConfig.image_size` spec)
+
+### v3.0.1 (2026-03-12)
 
 - **Fix:** Video resolution now passed to `GenerateVideosConfig` (was silently ignored)
 - **Fix:** Removed unsupported 4K video resolution (SDK only supports 720p/1080p)
@@ -258,7 +292,7 @@ For diagram generation with output path `diagram.png`:
 - **Breaking:** Default image model changed from `gemini-3-pro-image-preview` to `gemini-3.1-flash-image-preview` (Nano Banana 2)
 - **Diagram skill** keeps `gemini-3-pro-image-preview` (Nano Banana Pro) for highest quality
 - **`imageConfig` support** — aspect ratio and resolution control via `--aspect-ratio` and `--resolution` flags
-- **New CLI args:** `--aspect-ratio` (14 ratios) and `--resolution` (512px, 1K, 2K, 4K)
+- **New CLI args:** `--aspect-ratio` (14 ratios) and `--resolution` (512, 1K, 2K, 4K)
 - **Replaced mermaid skill with kroki skill** — renders 27 diagram types (Mermaid, PlantUML, GraphViz, D2, etc.) to PNG/SVG via Kroki.io
 - Removed deprecated `gemini-2.5-flash-image-preview` references
 
@@ -334,4 +368,4 @@ marketplace.json updated + submodule pointer advanced
 
 ---
 
-**Last Updated:** 2026-03-12
+**Last Updated:** 2026-03-27

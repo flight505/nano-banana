@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.1.0] — 2026-03-29
+
+### Added
+
+- **Style preset system** — `--style technical|visual-abstract|minimal` flag. Style directives sent via Gemini `system_instruction`, cleanly separated from user content. Presets defined in `skills/common/presets.py`.
+- **Multi-turn chat iteration** — diagram refinement uses `client.chats.create()` so the model retains context across iterations (replaces prompt reconstruction)
+- **Visual abstract skill** — Nature-quality scientific figures using visual metaphors, isometric depth, and physical analogies. Delegates to diagram script with `--style visual-abstract --doc-type journal`.
+- **`--aspect-ratio` flag** on diagram script (14 ratios: 1:1, 16:9, 9:16, etc.)
+- `visual-abstracts` and `scientific-figures` keywords in plugin.json
+
+### Changed
+
+- **`DIAGRAM_GUIDELINES` removed from class** — now lives in `presets.py` as the `"technical"` preset. Default behavior unchanged.
+- **Subprocess shim deleted** — `generate_diagram.py` wrapper removed; `generate_diagram_ai.py` renamed to `generate_diagram.py`
+
+### Fixed
+
+- **`--resolution 512px`** → `--resolution 512` — SDK `ImageConfig.image_size` accepts `"512"`, not `"512px"`
+
+### Removed
+
+- **`image_to_base64_url`** — dead code since v3.0.0 OpenRouter removal
+- **`generate_diagram_ai.py`** — merged into `generate_diagram.py`
+- **`improve_prompt()` method** — replaced by multi-turn chat messages
+- **`generate_image()` method** — replaced by `chat.send_message()` + `_extract_image()`
+
+---
+
 ## [3.0.2] — 2026-03-22
 
 ### Fixed

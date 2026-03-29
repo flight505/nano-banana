@@ -51,8 +51,10 @@ AI-powered image, diagram, and video generation for Claude Code using Nano Banan
 ### Generate a Diagram
 
 ```bash
-python3 skills/diagram/scripts/generate_diagram.py "description" -o output.png --doc-type TYPE
+python3 skills/diagram/scripts/generate_diagram.py "description" -o output.png --doc-type TYPE --style STYLE
 ```
+
+**Style Presets:** `technical` (default), `visual-abstract`, `minimal`
 
 **Document Types:** `specification`, `architecture`, `proposal`, `journal`, `conference`, `thesis`, `grant`, `sprint`, `report`, `preprint`, `readme`, `poster`, `presentation`, `default`
 
@@ -81,7 +83,7 @@ python3 skills/video/scripts/generate_video.py "description" --input source.png 
 
 ```bash
 python3 skills/image/scripts/generate_image.py "edit instructions" --input source.png -o output.png
-python3 skills/diagram/scripts/generate_diagram_ai.py "edit instructions" --input source.png -o output.png --doc-type architecture
+python3 skills/diagram/scripts/generate_diagram.py "edit instructions" --input source.png -o output.png --doc-type architecture
 ```
 
 ## Requirements
@@ -102,7 +104,9 @@ python3 skills/diagram/scripts/generate_diagram_ai.py "edit instructions" --inpu
 ## Key Principles
 
 1. **google-genai SDK** — single SDK for all Gemini and Veo models
-2. **Smart iteration** — diagram skill only regenerates if quality below threshold
-3. **Document-type aware** — 13 quality presets for different output contexts
-4. **AI review** — Gemini 3.1 Pro reviews each diagram generation
-5. **Shared utilities** — `skills/common/` provides reusable image, env, and client helpers
+2. **Style presets via `system_instruction`** — aesthetics separated from content (`--style technical|visual-abstract|minimal`)
+3. **Multi-turn chat iteration** — diagram refinement uses `client.chats.create()` for context-aware improvement
+4. **Smart iteration** — diagram skill only regenerates if quality below threshold
+5. **Document-type aware** — 13 quality thresholds for different output contexts
+6. **AI review** — Gemini 3.1 Pro reviews each diagram generation
+7. **Shared utilities** — `skills/common/` provides presets, client, image utils, and env helpers

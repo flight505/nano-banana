@@ -1,6 +1,6 @@
 [project]
 name = "nano-banana"
-version = "3.1.0"
+version = "3.2.0"
 description = "AI-powered image and diagram generation for Claude Code using Nano Banana 2 and Nano Banana Pro"
 readme = "README.md"
 license = { text = "MIT" }

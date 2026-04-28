@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.2.0] — 2026-04-28
+
+### Added
+
+- **`--input-extra` flag** on `generate_image.py` — repeatable, accepts additional input images for multi-image edits and style transfer. Sent in order after the primary `--input`. Enables patterns like "scaffold + style template + approved design" where the model uses the extra references to keep style consistent across an image set. Recommended with `-m gemini-3-pro-image-preview` for best style preservation.
+  - Backward-compatible — existing single-image edits unchanged.
+  - All inputs validated before the API call (clear `FileNotFoundError` if any extra is missing).
+  - Verbose run output prints each extra in order.
+
+---
+
 ## [3.1.0] — 2026-03-29
 
 ### Added

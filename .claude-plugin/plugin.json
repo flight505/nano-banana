@@ -1,6 +1,6 @@
 {
   "name": "nano-banana",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "AI-powered image, diagram, and video generation for Claude Code - uses Nano Banana 2 (Gemini 3.1 Flash Image) for fast generation, Nano Banana Pro (Gemini 3 Pro Image) for professional diagrams, and Veo 3.1 for video generation.",
   "author": {
     "name": "Jesper Vang",

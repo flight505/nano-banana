@@ -18,6 +18,11 @@ Usage:
     # Edit an existing image
     python generate_image.py "Make the sky purple" --input photo.jpg -o edited.png
 
+    # Edit with style references (multi-image input)
+    python generate_image.py "Match the style of the references" \\
+      --input scaffold.png --input-extra style.jpg --input-extra approved.jpg \\
+      -o output.jpg -m gemini-3-pro-image-preview
+
     # Use Nano Banana Pro for highest quality
     python generate_image.py "Professional headshot" -m gemini-3-pro-image-preview -o headshot.png
 """
@@ -79,6 +84,7 @@ def generate_image(
     output_path: str = "generated_image.png",
     api_key: Optional[str] = None,
     input_image: Optional[str] = None,
+    input_extras: Optional[list[str]] = None,
     timeout: int = 120,
     aspect_ratio: Optional[str] = None,
     resolution: Optional[str] = None,
@@ -92,6 +98,9 @@ def generate_image(
         output_path: Path to save the generated image
         api_key: API key (will auto-detect from environment if not provided)
         input_image: Path to an input image for editing (optional)
+        input_extras: Additional input images for multi-image edit / style transfer
+            (e.g. style references, approved-design references). Order matters —
+            sent to the model after `input_image`.
         timeout: Request timeout in seconds (default: 120)
         aspect_ratio: Image aspect ratio (e.g. "16:9", "1:1", "4:3")
         resolution: Image resolution (512, 1K, 2K, 4K)
@@ -101,7 +110,7 @@ def generate_image(
 
     Raises:
         ValueError: If no API key is found.
-        FileNotFoundError: If the input image does not exist.
+        FileNotFoundError: If any input image does not exist.
         RuntimeError: On API errors or missing image in response.
     """
     # Strip google/ prefix if present (legacy compat)
@@ -112,14 +121,26 @@ def generate_image(
     if input_image and not Path(input_image).exists():
         raise FileNotFoundError(f"Input image not found: {input_image}")
 
-    is_editing = input_image is not None
+    # Validate extra inputs exist
+    extras = input_extras or []
+    for extra in extras:
+        if not Path(extra).exists():
+            raise FileNotFoundError(f"Extra input image not found: {extra}")
+
+    is_editing = input_image is not None or bool(extras)
+    total_inputs = (1 if input_image else 0) + len(extras)
 
     print(f"\n{'=' * 50}")
     print(f"Nano Banana - {'Editing' if is_editing else 'Generating'} Image")
     print(f"{'=' * 50}")
 
     if is_editing:
-        print(f"Input: {input_image}")
+        if input_image:
+            print(f"Input: {input_image}")
+        for i, extra in enumerate(extras, start=1):
+            print(f"Input-extra #{i}: {extra}")
+        if total_inputs > 1:
+            print(f"Total input images: {total_inputs}")
         print(f"Edit: {prompt}")
     else:
         print(f"Prompt: {prompt}")
@@ -138,13 +159,18 @@ def generate_image(
     # Build client
     client = get_client(api_key=api_key)
 
-    # Build contents list
+    # Build contents list — prompt first, then primary input, then extras in order
     contents: list = [prompt]
     if input_image:
         with open(input_image, "rb") as f:
             img_bytes = f.read()
         mime = get_mime_type(input_image)
         contents.append(types.Part.from_bytes(data=img_bytes, mime_type=mime))
+    for extra in extras:
+        with open(extra, "rb") as f:
+            extra_bytes = f.read()
+        extra_mime = get_mime_type(extra)
+        contents.append(types.Part.from_bytes(data=extra_bytes, mime_type=extra_mime))
 
     # Build generation config
     config_kwargs: dict = {"response_modalities": ["TEXT", "IMAGE"]}
@@ -208,6 +234,11 @@ Examples:
   # Edit an existing image
   python generate_image.py "Make the sky purple" --input photo.jpg -o edited.png
 
+  # Edit with style references (multi-image input — Pro model recommended)
+  python generate_image.py "Match style of references" \\
+    --input scaffold.png --input-extra style.jpg --input-extra approved.jpg \\
+    -o output.jpg -m gemini-3-pro-image-preview
+
 Models (Nano Banana family):
   - gemini-3.1-flash-image-preview (default, Nano Banana 2 -- fastest, general use)
   - gemini-3-pro-image-preview (Nano Banana Pro -- best quality, professional assets)
@@ -244,6 +275,17 @@ Environment:
         "--input", "-i", type=str, help="Input image path for editing (enables edit mode)"
     )
     parser.add_argument(
+        "--input-extra",
+        action="append",
+        default=[],
+        metavar="PATH",
+        help=(
+            "Additional input image for multi-image edit / style transfer. "
+            "Repeatable — pass once per extra image. Sent in order after --input. "
+            "Recommended with -m gemini-3-pro-image-preview for best style preservation."
+        ),
+    )
+    parser.add_argument(
         "--api-key", type=str, help="API key (or set GEMINI_API_KEY env var)"
     )
     parser.add_argument(
@@ -274,6 +316,7 @@ Environment:
             output_path=args.output,
             api_key=args.api_key,
             input_image=args.input,
+            input_extras=args.input_extra,
             timeout=args.timeout,
             aspect_ratio=args.aspect_ratio,
             resolution=args.resolution,
